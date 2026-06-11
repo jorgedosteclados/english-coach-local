@@ -51,6 +51,10 @@ app.get("/lesson", (req, res) => {
   res.render("lesson");
 });
 
+app.get("/writing", (req, res) => {
+  res.render("writing");
+});
+
 app.get("/history", (req, res) => {
   db.all("SELECT * FROM corrections ORDER BY created_at DESC", [], (err, rows) => {
     if (err) {

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing Mission</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">Back to Home</a>
+
+    <section class="hero">
+      <h1>Writing Mission</h1>
+      <p>Practice professional English for real work situations.</p>
+    </section>
+
+    <section class="card mission-card">
+      <p class="mission-label">Scenario</p>
+      <p>You need to send a short message to a coworker asking for more details about an issue.</p>
+
+      <p class="mission-label">Task</p>
+      <p>Write a professional message in English asking for more details.</p>
+    </section>
+
+    <section class="card">
+      <label for="writingText">Your message</label>
+      <textarea id="writingText" placeholder="Example: Hi Ana, could you please share more details about the issue?"></textarea>
+
+      <button id="checkWritingBtn">Check My Writing</button>
+    </section>
+
+    <section id="writingResult" class="result hidden">
+      <h2>AI Feedback</h2>
+      <div id="writingResultContent"></div>
+    </section>
+  </main>
+
+  <script src="/js/writing.js"></script>
+</body>
+</html>

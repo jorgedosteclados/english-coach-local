@@ -210,6 +210,18 @@ button:hover {
   margin-bottom: 8px;
 }
 
+.mission-card {
+  margin-bottom: 18px;
+}
+
+.mission-label {
+  margin: 0 0 6px;
+  color: #0b5cff;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
 .lesson-progress {
   color: #667085;
   font-weight: bold;
