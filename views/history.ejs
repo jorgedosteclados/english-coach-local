@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">← Back to Home</a>
+
+    <section class="hero">
+      <h1>History</h1>
+      <p>Your previous corrections are saved here.</p>
+    </section>
+
+    <% if (corrections && corrections.length > 0) { %>
+      <% corrections.forEach(function(item) { %>
+        <section class="result">
+          <h2>Correction</h2>
+
+          <p><strong>Original:</strong></p>
+          <div class="feedback-box"><%= item.original_text %></div>
+
+          <p><strong>AI Feedback:</strong></p>
+          <div class="feedback-box"><%= item.ai_feedback %></div>
+
+          <p class="date-text">
+            Saved at: <%= item.created_at %>
+          </p>
+        </section>
+      <% }) %>
+    <% } else { %>
+      <section class="card">
+        <p>No corrections saved yet.</p>
+      </section>
+    <% } %>
+  </main>
+</body>
+</html>

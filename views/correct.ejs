@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Correct My English</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">← Back to Home</a>
+
+    <section class="hero">
+      <h1>Correct My English</h1>
+      <p>Write a sentence in English and get feedback.</p>
+    </section>
+
+    <section class="card">
+      <label for="text">Your sentence</label>
+      <textarea id="text" placeholder="Example: I have doubt about this case."></textarea>
+
+      <button id="correctBtn">Correct</button>
+    </section>
+
+    <section id="result" class="result hidden">
+      <h2>AI Feedback</h2>
+      <div id="resultContent"></div>
+    </section>
+  </main>
+
+  <script src="/js/correct.js"></script>
+</body>
+</html>

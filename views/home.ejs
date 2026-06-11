@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Coach Local</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <h1>English Coach Local</h1>
+      <p>Aprenda inglês. Pratique todos os dias. Fale com confiança.</p>
+    </section>
+
+    <section class="stats">
+    <div class="stat-card">
+      <span class="icon">🔥</span>
+      <h2><%= progress.streak_days %></h2>
+      <p>day streak</p>
+    </div>
+
+    <div class="stat-card">
+      <span class="icon">⭐</span>
+      <h2><%= progress.total_xp %></h2>
+      <p>Total XP</p>
+    </div>
+
+    <div class="stat-card">
+      <span class="icon">📘</span>
+      <h2><%= progress.lessons_completed %></h2>
+      <p>Lessons completed</p>
+    </div>
+  </section>
+
+    <section class="menu">
+      <a href="/lesson" class="menu-card blue">
+        <span>📘</span>
+        <div>
+          <h3>Daily Lesson</h3>
+          <p>Learn something new every day</p>
+        </div>
+      </a>
+
+      <a href="#" class="menu-card green">
+        <span>🎙️</span>
+        <div>
+          <h3>Practice Speaking</h3>
+          <p>Improve your pronunciation</p>
+        </div>
+      </a>
+
+      <a href="/correct" class="menu-card purple">
+        <span>✍️</span>
+        <div>
+          <h3>Correct My English</h3>
+          <p>Get AI feedback on your writing</p>
+        </div>
+      </a>
+
+      <a href="#" class="menu-card yellow">
+        <span>💬</span>
+        <div>
+          <h3>AI Conversation</h3>
+          <p>Chat with your local AI tutor</p>
+        </div>
+      </a>
+
+      <a href="/history" class="menu-card teal">
+        <span>📚</span>
+        <div>
+          <h3>History</h3>
+          <p>Review your previous corrections</p>
+        </div>
+      </a>
+    </section>
+  </main>
+</body>
+</html>

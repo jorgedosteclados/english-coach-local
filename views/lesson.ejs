@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Lesson</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">← Back to Home</a>
+
+    <section class="hero">
+      <h1>Lesson 1</h1>
+      <p>Basic Support English</p>
+    </section>
+
+    <section class="card">
+      <p class="lesson-progress">Question 1 of 5</p>
+
+      <h2 id="lessonTitle">How do you say:</h2>
+      <p class="question-text">Eu vou verificar internamente.</p>
+
+      <div class="options">
+        <button class="option-btn" data-correct="true">I will check internally.</button>
+        <button class="option-btn">I will see inside.</button>
+        <button class="option-btn">I go verify internal.</button>
+        <button class="option-btn">I checking internal.</button>
+      </div>
+
+      <div id="lessonFeedback" class="feedback-box hidden"></div>
+
+      <button id="nextQuestionBtn" class="hidden">Next Question</button>
+      <button id="restartLessonBtn" class="hidden">Start Again</button>
+    </section>
+  </main>
+
+  <script src="/js/lesson.js"></script>
+</body>
+</html>

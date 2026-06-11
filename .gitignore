@@ -1,0 +1,7 @@
+﻿node_modules/
+.env
+english_coach.db
+english_coach_backup_before_codex.db
+english_coach.db-journal
+npm-debug.log
+.DS_Store
