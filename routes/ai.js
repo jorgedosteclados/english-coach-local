@@ -192,7 +192,66 @@ router.post("/generate-lesson-question", async (req, res) => {
     );
   }
 
+  function loadSavedQuestion() {
+    return new Promise((resolve) => {
+      db.get(
+        `
+        SELECT *
+        FROM lesson_questions
+        ORDER BY times_used ASC, RANDOM()
+        LIMIT 1
+        `,
+        [],
+        (selectError, row) => {
+          if (selectError) {
+            console.error("Error loading saved lesson question:", selectError.message);
+            return resolve(null);
+          }
+
+          if (!row) {
+            return resolve(null);
+          }
+
+          let options;
+
+          try {
+            options = JSON.parse(row.options_json);
+          } catch (parseError) {
+            console.error("Error parsing saved lesson question:", parseError.message);
+            return resolve(null);
+          }
+
+          db.run(
+            "UPDATE lesson_questions SET times_used = times_used + 1 WHERE id = ?",
+            [row.id],
+            function (updateError) {
+              if (updateError) {
+                console.error("Error updating lesson question usage:", updateError.message);
+              }
+            }
+          );
+
+          return resolve({
+            question: row.question_pt,
+            questionPt: row.question_pt,
+            options: options,
+            correctAnswer: row.correct_answer,
+            explanation: row.explanation_pt,
+            explanationPt: row.explanation_pt,
+            source: row.source || "database"
+          });
+        }
+      );
+    });
+  }
+
   try {
+    const savedQuestion = await loadSavedQuestion();
+
+    if (savedQuestion) {
+      return res.json(savedQuestion);
+    }
+
     const prompt = `
 You are an English teacher helping a Brazilian Portuguese speaker learn professional English.
 
