@@ -5,6 +5,29 @@ const resultSection = document.getElementById("result");
 const resultContent = document.getElementById("resultContent");
 
 const correctionXp = 5;
+const correctionDraftKey = "englishCoach.correction.draft";
+
+let correctionCompleted = false;
+let correctionSaveInProgress = false;
+
+textInput.value = localStorage.getItem(correctionDraftKey) || "";
+
+textInput.addEventListener("input", () => {
+  if (correctionCompleted) {
+    return;
+  }
+
+  localStorage.setItem(correctionDraftKey, textInput.value);
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (correctionCompleted || !textInput.value.trim()) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = "";
+});
 
 correctBtn.addEventListener("click", async () => {
   const text = textInput.value.trim();
@@ -53,6 +76,15 @@ correctBtn.addEventListener("click", async () => {
 });
 
 async function saveCorrectionProgress() {
+  if (correctionSaveInProgress) {
+    return {
+      streakDays: null,
+      saved: false
+    };
+  }
+
+  correctionSaveInProgress = true;
+
   try {
     const response = await fetch("/ai/save-lesson-progress", {
       method: "POST",
@@ -86,6 +118,8 @@ async function saveCorrectionProgress() {
 }
 
 function renderCorrectionComplete(feedback, progress) {
+  correctionCompleted = true;
+  localStorage.removeItem(correctionDraftKey);
   correctForm.classList.add("hidden");
   const streakText = progress && progress.streakDays ? `${progress.streakDays} day` : "Saved";
 
@@ -117,7 +151,10 @@ function renderCorrectionComplete(feedback, progress) {
   `;
 
   document.getElementById("startCorrectionAgainBtn").addEventListener("click", () => {
+    correctionCompleted = false;
+    correctionSaveInProgress = false;
     textInput.value = "";
+    localStorage.removeItem(correctionDraftKey);
     correctForm.classList.remove("hidden");
     resultSection.classList.add("hidden");
     resultContent.innerHTML = "";

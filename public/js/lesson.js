@@ -1,6 +1,7 @@
 let currentQuestion = null;
 let questionNumber = 1;
 const totalQuestions = 5;
+const lessonStateKey = "englishCoach.lesson.unit1.state";
 
 let correctAnswers = 0;
 let wrongAnswers = 0;
@@ -8,6 +9,9 @@ let xpEarned = 0;
 
 let selectedButton = null;
 let selectedOption = null;
+let currentQuestionAnswered = false;
+let lessonCompleted = false;
+let lessonSaveInProgress = false;
 
 const lessonTitle = document.getElementById("lessonTitle");
 const progressText = document.querySelector(".lesson-progress");
@@ -36,8 +40,100 @@ continueHomeBtn.addEventListener("click", () => {
 nextQuestionBtn.insertAdjacentElement("beforebegin", confirmAnswerBtn);
 restartLessonBtn.insertAdjacentElement("beforebegin", continueHomeBtn);
 
+window.addEventListener("beforeunload", (event) => {
+  if (!hasUnsavedLessonProgress()) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = "";
+});
+
+function hasUnsavedLessonProgress() {
+  return (
+    !lessonCompleted &&
+    (questionNumber > 1 ||
+      correctAnswers > 0 ||
+      wrongAnswers > 0 ||
+      xpEarned > 0 ||
+      Boolean(currentQuestion))
+  );
+}
+
 function updateScoreDisplay() {
   scoreDisplay.textContent = `XP: ${xpEarned} | Correct: ${correctAnswers} | Wrong: ${wrongAnswers}`;
+}
+
+function saveLessonState() {
+  if (lessonCompleted || !currentQuestion) {
+    return;
+  }
+
+  localStorage.setItem(
+    lessonStateKey,
+    JSON.stringify({
+      currentQuestion,
+      questionNumber,
+      correctAnswers,
+      wrongAnswers,
+      xpEarned,
+      selectedOption,
+      currentQuestionAnswered
+    })
+  );
+}
+
+function clearLessonState() {
+  localStorage.removeItem(lessonStateKey);
+}
+
+function restoreLessonState() {
+  const savedState = localStorage.getItem(lessonStateKey);
+
+  if (!savedState) {
+    return false;
+  }
+
+  try {
+    const state = JSON.parse(savedState);
+
+    if (!state.currentQuestion || !Array.isArray(state.currentQuestion.options)) {
+      clearLessonState();
+      return false;
+    }
+
+    currentQuestion = state.currentQuestion;
+    questionNumber = Number(state.questionNumber) || 1;
+    correctAnswers = Number(state.correctAnswers) || 0;
+    wrongAnswers = Number(state.wrongAnswers) || 0;
+    xpEarned = Number(state.xpEarned) || 0;
+    selectedOption = state.selectedOption || null;
+    currentQuestionAnswered = Boolean(state.currentQuestionAnswered);
+
+    showQuestionShell();
+    renderQuestion(currentQuestion);
+    updateScoreDisplay();
+
+    if (currentQuestionAnswered) {
+      renderRestoredAnswer();
+    }
+
+    return true;
+  } catch (error) {
+    console.error(error);
+    clearLessonState();
+    return false;
+  }
+}
+
+function showQuestionShell() {
+  lessonTitle.classList.remove("hidden");
+  progressText.classList.remove("hidden");
+  questionText.classList.remove("hidden");
+  scoreDisplay.classList.remove("hidden");
+
+  lessonTitle.textContent = "How do you say:";
+  progressText.textContent = `Question ${questionNumber} of ${totalQuestions}`;
 }
 
 function playSound(type) {
@@ -69,16 +165,11 @@ function playSound(type) {
 async function loadQuestion() {
   selectedButton = null;
   selectedOption = null;
+  currentQuestionAnswered = false;
 
-  lessonTitle.classList.remove("hidden");
-  progressText.classList.remove("hidden");
-  questionText.classList.remove("hidden");
-  scoreDisplay.classList.remove("hidden");
-
+  showQuestionShell();
   updateScoreDisplay();
 
-  lessonTitle.textContent = "How do you say:";
-  progressText.textContent = `Question ${questionNumber} of ${totalQuestions}`;
   questionText.textContent = "Loading your next question...";
   optionsContainer.innerHTML = "";
   lessonFeedback.classList.add("hidden");
@@ -103,28 +194,36 @@ async function loadQuestion() {
     }
 
     currentQuestion = data;
-
-    questionText.textContent = currentQuestion.questionPt || currentQuestion.question;
-    optionsContainer.innerHTML = "";
-
-    currentQuestion.options.forEach((option) => {
-      const button = document.createElement("button");
-      button.className = "option-btn";
-      button.textContent = option;
-
-      button.addEventListener("click", () => {
-        selectAnswer(button, option);
-      });
-
-      optionsContainer.appendChild(button);
-    });
+    renderQuestion(currentQuestion);
+    saveLessonState();
   } catch (error) {
     console.error(error);
     questionText.textContent = "Error loading lesson question.";
   }
 }
 
+function renderQuestion(question) {
+  questionText.textContent = question.questionPt || question.question;
+  optionsContainer.innerHTML = "";
+
+  question.options.forEach((option) => {
+    const button = document.createElement("button");
+    button.className = "option-btn";
+    button.textContent = option;
+
+    button.addEventListener("click", () => {
+      selectAnswer(button, option);
+    });
+
+    optionsContainer.appendChild(button);
+  });
+}
+
 function selectAnswer(button, option) {
+  if (currentQuestionAnswered) {
+    return;
+  }
+
   const buttons = document.querySelectorAll(".option-btn");
 
   buttons.forEach((btn) => {
@@ -142,6 +241,7 @@ function selectAnswer(button, option) {
 
   lessonFeedback.classList.add("hidden");
   confirmAnswerBtn.classList.remove("hidden");
+  saveLessonState();
 }
 
 function checkAnswer() {
@@ -151,16 +251,12 @@ function checkAnswer() {
     return;
   }
 
-  const buttons = document.querySelectorAll(".option-btn");
+  if (currentQuestionAnswered) {
+    return;
+  }
+
   const explanation = currentQuestion.explanationPt || currentQuestion.explanation;
-
-  buttons.forEach((button) => {
-    button.disabled = true;
-
-    if (button.textContent === currentQuestion.correctAnswer) {
-      button.classList.add("correct-option");
-    }
-  });
+  currentQuestionAnswered = true;
 
   if (selectedOption === currentQuestion.correctAnswer) {
     correctAnswers++;
@@ -170,11 +266,48 @@ function checkAnswer() {
   } else {
     wrongAnswers++;
     playSound("wrong");
-    selectedButton.classList.add("wrong-option");
     lessonFeedback.textContent = `Not quite. Correct answer: ${currentQuestion.correctAnswer}. ${explanation}`;
   }
 
+  renderAnsweredOptions();
   updateScoreDisplay();
+  saveLessonState();
+
+  lessonFeedback.classList.remove("hidden");
+  confirmAnswerBtn.classList.add("hidden");
+  nextQuestionBtn.classList.remove("hidden");
+}
+
+function renderAnsweredOptions() {
+  const buttons = document.querySelectorAll(".option-btn");
+
+  buttons.forEach((button) => {
+    button.disabled = true;
+
+    if (button.textContent === currentQuestion.correctAnswer) {
+      button.classList.add("correct-option");
+    }
+
+    if (
+      selectedOption &&
+      selectedOption !== currentQuestion.correctAnswer &&
+      button.textContent === selectedOption
+    ) {
+      button.classList.add("wrong-option");
+    }
+  });
+}
+
+function renderRestoredAnswer() {
+  const explanation = currentQuestion.explanationPt || currentQuestion.explanation;
+
+  renderAnsweredOptions();
+
+  if (selectedOption === currentQuestion.correctAnswer) {
+    lessonFeedback.textContent = `Correct! +10 XP. ${explanation}`;
+  } else {
+    lessonFeedback.textContent = `Not quite. Correct answer: ${currentQuestion.correctAnswer}. ${explanation}`;
+  }
 
   lessonFeedback.classList.remove("hidden");
   confirmAnswerBtn.classList.add("hidden");
@@ -182,6 +315,14 @@ function checkAnswer() {
 }
 
 async function finishLesson() {
+  if (lessonSaveInProgress) {
+    return;
+  }
+
+  lessonSaveInProgress = true;
+  lessonCompleted = true;
+  clearLessonState();
+
   lessonTitle.classList.add("hidden");
   progressText.classList.add("hidden");
   questionText.classList.add("hidden");
@@ -265,7 +406,11 @@ function restartLesson() {
   xpEarned = 0;
   selectedButton = null;
   selectedOption = null;
+  currentQuestionAnswered = false;
+  lessonCompleted = false;
+  lessonSaveInProgress = false;
 
+  clearLessonState();
   updateScoreDisplay();
   loadQuestion();
 }
@@ -289,4 +434,6 @@ restartLessonBtn.addEventListener("click", () => {
   restartLesson();
 });
 
-loadQuestion();
+if (!restoreLessonState()) {
+  loadQuestion();
+}

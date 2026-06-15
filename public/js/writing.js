@@ -7,6 +7,29 @@ const writingResultContent = document.getElementById("writingResultContent");
 const missionId = Number(writingForm.dataset.missionId) || null;
 const missionUnitId = Number(writingForm.dataset.unitId) || 2;
 const missionXp = Number(writingForm.dataset.xpReward) || 10;
+const writingDraftKey = `englishCoach.writingMission.${missionId || "default"}.draft`;
+
+let missionCompleted = false;
+let missionSaveInProgress = false;
+
+writingText.value = localStorage.getItem(writingDraftKey) || "";
+
+writingText.addEventListener("input", () => {
+  if (missionCompleted) {
+    return;
+  }
+
+  localStorage.setItem(writingDraftKey, writingText.value);
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (missionCompleted || !writingText.value.trim()) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = "";
+});
 
 checkWritingBtn.addEventListener("click", async () => {
   const text = writingText.value.trim();
@@ -55,6 +78,15 @@ checkWritingBtn.addEventListener("click", async () => {
 });
 
 async function saveMissionProgress() {
+  if (missionSaveInProgress) {
+    return {
+      streakDays: null,
+      saved: false
+    };
+  }
+
+  missionSaveInProgress = true;
+
   try {
     const response = await fetch("/ai/save-lesson-progress", {
       method: "POST",
@@ -89,6 +121,8 @@ async function saveMissionProgress() {
 }
 
 function renderMissionComplete(feedback, progress) {
+  missionCompleted = true;
+  localStorage.removeItem(writingDraftKey);
   writingForm.classList.add("hidden");
   const streakText = progress && progress.streakDays ? `${progress.streakDays} day` : "Saved";
 
@@ -124,7 +158,10 @@ function renderMissionComplete(feedback, progress) {
   `;
 
   document.getElementById("startWritingAgainBtn").addEventListener("click", () => {
+    missionCompleted = false;
+    missionSaveInProgress = false;
     writingText.value = "";
+    localStorage.removeItem(writingDraftKey);
     writingForm.classList.remove("hidden");
     writingResult.classList.add("hidden");
     writingResultContent.innerHTML = "";
