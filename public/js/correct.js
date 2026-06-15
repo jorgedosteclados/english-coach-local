@@ -1,7 +1,10 @@
 const correctBtn = document.getElementById("correctBtn");
 const textInput = document.getElementById("text");
+const correctForm = document.getElementById("correctForm");
 const resultSection = document.getElementById("result");
 const resultContent = document.getElementById("resultContent");
+
+const correctionXp = 5;
 
 correctBtn.addEventListener("click", async () => {
   const text = textInput.value.trim();
@@ -11,10 +14,12 @@ correctBtn.addEventListener("click", async () => {
     return;
   }
 
+  correctBtn.disabled = true;
+  correctBtn.textContent = "Checking...";
   resultSection.classList.remove("hidden");
   resultContent.innerHTML = `
-    <div class="feedback-box">
-      🤖 Correcting your English...
+    <div class="feedback-box writing-loading">
+      Correcting your English...
       <br><br>
       Please wait a few seconds.
     </div>
@@ -31,12 +36,105 @@ correctBtn.addEventListener("click", async () => {
 
     const data = await response.json();
 
-    resultContent.innerHTML = `
-      <div class="feedback-box">${data.result || data.error}</div>
-    `;
+    if (data.error) {
+      renderCorrectionError(data.error);
+      return;
+    }
+
+    const progress = await saveCorrectionProgress();
+    renderCorrectionComplete(data.result, progress);
   } catch (error) {
-    resultContent.innerHTML = `
-      <div class="feedback-box">Error connecting to the local AI route.</div>
-    `;
+    console.error(error);
+    renderCorrectionError("Error connecting to the local AI route.");
+  } finally {
+    correctBtn.disabled = false;
+    correctBtn.textContent = "Correct";
   }
 });
+
+async function saveCorrectionProgress() {
+  try {
+    const response = await fetch("/ai/save-lesson-progress", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        xpEarned: correctionXp,
+        correctAnswers: 1,
+        wrongAnswers: 0,
+        unitId: 3
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      return {
+        streakDays: data.streakDays,
+        saved: true
+      };
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  return {
+    streakDays: null,
+    saved: false
+  };
+}
+
+function renderCorrectionComplete(feedback, progress) {
+  correctForm.classList.add("hidden");
+  const streakText = progress && progress.streakDays ? `${progress.streakDays} day` : "Saved";
+
+  resultContent.innerHTML = `
+    <div class="lesson-complete writing-complete">
+      <div class="success-badge">✓</div>
+      <h2>Feedback complete!</h2>
+      <p class="motivation-message">Small corrections build natural professional English. Nice work.</p>
+
+      <div class="completion-stats">
+        <div>
+          <span>${correctionXp}</span>
+          <small>XP earned</small>
+        </div>
+        <div>
+          <span>${streakText}</span>
+          <small>Current streak</small>
+        </div>
+      </div>
+
+      <div class="writing-feedback-card">
+        <h3>AI Feedback</h3>
+        <pre>${escapeHtml(feedback)}</pre>
+      </div>
+
+      <a href="/units" class="primary-link continue-mission-link">Continue</a>
+      <button type="button" class="secondary-btn" id="startCorrectionAgainBtn">Start Again</button>
+    </div>
+  `;
+
+  document.getElementById("startCorrectionAgainBtn").addEventListener("click", () => {
+    textInput.value = "";
+    correctForm.classList.remove("hidden");
+    resultSection.classList.add("hidden");
+    resultContent.innerHTML = "";
+  });
+}
+
+function renderCorrectionError(message) {
+  resultContent.innerHTML = `
+    <div class="feedback-box">${escapeHtml(message)}</div>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
