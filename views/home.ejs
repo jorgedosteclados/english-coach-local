@@ -8,53 +8,62 @@
 </head>
 <body>
   <main class="container">
-    <section class="hero">
-      <h1>English Coach Local</h1>
-      <p>Aprenda inglês. Pratique todos os dias. Fale com confiança.</p>
+    <section class="hero hero-with-mascot">
+      <div>
+        <p class="mascot-kicker">Mini Beagle Coach</p>
+        <h1>English Coach Local</h1>
+        <p>Practice English for customer support, conversations, and professional messages.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
     </section>
 
     <section class="stats">
-    <div class="stat-card">
-      <span class="icon">🔥</span>
-      <h2><%= progress.streak_days %></h2>
-      <p>day streak</p>
-    </div>
+      <div class="stat-card">
+        <span class="icon">F</span>
+        <h2><%= progress.streak_days %></h2>
+        <p>day streak</p>
+      </div>
 
-    <div class="stat-card">
-      <span class="icon">⭐</span>
-      <h2><%= progress.total_xp %></h2>
-      <p>Total XP</p>
-    </div>
+      <div class="stat-card">
+        <span class="icon">XP</span>
+        <h2><%= progress.total_xp %></h2>
+        <p>Total XP</p>
+      </div>
 
-    <div class="stat-card">
-      <span class="icon">📘</span>
-      <h2><%= progress.lessons_completed %></h2>
-      <p>Lessons completed</p>
-    </div>
-  </section>
+      <div class="stat-card">
+        <span class="icon">L</span>
+        <h2><%= progress.lessons_completed %></h2>
+        <p>Lessons completed</p>
+      </div>
+    </section>
+
+    <section class="path-preview">
+      <div>
+        <p class="unit-label">Your next step</p>
+        <h2>Customer Support English Path</h2>
+        <p>Follow short lessons, writing missions, and feedback from your mini beagle coach.</p>
+      </div>
+      <a href="/units" class="primary-link">Continue Learning</a>
+    </section>
 
     <section class="menu">
+      <a href="/units" class="menu-card blue">
+        <span>1</span>
+        <div>
+          <h3>Learning Path</h3>
+          <p>Follow your Duolingo-style journey</p>
+        </div>
+      </a>
+
       <a href="/lesson" class="menu-card blue">
-        <span>📘</span>
+        <span>L</span>
         <div>
           <h3>Daily Lesson</h3>
-          <p>Learn something new every day</p>
-        </div>
-      </a>
-
-      <a href="#" class="menu-card green">
-        <span>🎙️</span>
-        <div>
-          <h3>Practice Speaking</h3>
-          <p>Improve your pronunciation</p>
-        </div>
-      </a>
-
-      <a href="/correct" class="menu-card purple">
-        <span>✍️</span>
-        <div>
-          <h3>Correct My English</h3>
-          <p>Get AI feedback on your writing</p>
+          <p>Learn useful professional phrases</p>
         </div>
       </a>
 
@@ -66,16 +75,16 @@
         </div>
       </a>
 
-      <a href="#" class="menu-card yellow">
-        <span>💬</span>
+      <a href="/correct" class="menu-card purple">
+        <span>C</span>
         <div>
-          <h3>AI Conversation</h3>
-          <p>Chat with your local AI tutor</p>
+          <h3>Correct My English</h3>
+          <p>Get AI feedback on your writing</p>
         </div>
       </a>
 
       <a href="/history" class="menu-card teal">
-        <span>📚</span>
+        <span>H</span>
         <div>
           <h3>History</h3>
           <p>Review your previous corrections</p>

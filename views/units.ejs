@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learning Path</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">Back to Home</a>
+
+    <section class="hero hero-with-mascot compact-mascot">
+      <div>
+        <p class="mascot-kicker">Mini Beagle Coach</p>
+        <h1>Learning Path</h1>
+        <p>Build professional English step by step for customer conversations.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
+    </section>
+
+    <section class="path">
+      <% if (!units || units.length === 0) { %>
+        <section class="card">
+          <p>The learning path could not be loaded.</p>
+        </section>
+      <% } %>
+
+      <% units.forEach((unit) => { %>
+        <article class="unit-card <%= unit.isCompleted ? 'completed' : '' %> <%= unit.isLocked ? 'locked' : 'active' %>">
+          <div class="unit-number"><%= unit.isCompleted ? '✓' : unit.unit_order %></div>
+          <div>
+            <p class="unit-label">
+              <%= unit.isCompleted ? 'Completed' : unit.isLocked ? 'Locked' : `Unit ${unit.unit_order}` %>
+            </p>
+            <h2><%= unit.title %></h2>
+            <p><%= unit.description %></p>
+
+            <% if (unit.isLocked || !unit.href) { %>
+              <span class="unit-action disabled">Locked</span>
+            <% } else { %>
+              <a href="<%= unit.href %>" class="unit-action">
+                <%= unit.isCompleted ? 'Practice Again' : 'Start' %>
+              </a>
+            <% } %>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+  </main>
+</body>
+</html>

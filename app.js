@@ -51,8 +51,89 @@ app.get("/lesson", (req, res) => {
   res.render("lesson");
 });
 
+app.get("/units", (req, res) => {
+  db.all(
+    `
+    SELECT
+      learning_units.*,
+      user_unit_progress.status,
+      user_unit_progress.completed_count
+    FROM learning_units
+    LEFT JOIN user_unit_progress
+      ON user_unit_progress.unit_id = learning_units.id
+      AND user_unit_progress.user_id = 1
+    ORDER BY learning_units.unit_order ASC
+    `,
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error("Error loading units:", err.message);
+        return res.render("units", { units: [] });
+      }
+
+      let previousCompleted = true;
+
+      const units = rows.map((unit) => {
+        const isCompleted = unit.status === "completed";
+        const isLocked = Boolean(unit.is_locked_default) || !previousCompleted;
+
+        previousCompleted = isCompleted;
+
+        return {
+          ...unit,
+          isCompleted,
+          isLocked
+        };
+      });
+
+      res.render("units", { units });
+    }
+  );
+});
+
 app.get("/writing", (req, res) => {
-  res.render("writing");
+  db.get(
+    `
+    SELECT *
+    FROM writing_missions
+    ORDER BY times_used ASC, RANDOM()
+    LIMIT 1
+    `,
+    [],
+    (err, mission) => {
+      if (err) {
+        console.error("Error loading writing mission:", err.message);
+      }
+
+      const fallbackMission = {
+        id: 0,
+        unit_id: 2,
+        title: "Ask for Details",
+        scenario:
+          "You need to send a short message to a coworker asking for more details about an issue.",
+        task: "Write a professional message in English asking for more details.",
+        placeholder:
+          "Example: Hi Ana, could you please share more details about the issue?",
+        xp_reward: 10
+      };
+
+      const selectedMission = mission || fallbackMission;
+
+      if (mission) {
+        db.run(
+          "UPDATE writing_missions SET times_used = times_used + 1 WHERE id = ?",
+          [mission.id],
+          (updateError) => {
+            if (updateError) {
+              console.error("Error updating writing mission usage:", updateError.message);
+            }
+          }
+        );
+      }
+
+      res.render("writing", { mission: selectedMission });
+    }
+  );
 });
 
 app.get("/history", (req, res) => {

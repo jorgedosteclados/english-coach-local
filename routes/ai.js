@@ -331,11 +331,12 @@ Rules:
 });
 
 router.post("/save-lesson-progress", (req, res) => {
-  const { xpEarned, correctAnswers, wrongAnswers } = req.body;
+  const { xpEarned, correctAnswers, wrongAnswers, unitId } = req.body;
 
   const xp = Number(xpEarned) || 0;
   const correct = Number(correctAnswers) || 0;
   const wrong = Number(wrongAnswers) || 0;
+  const completedUnitId = Number(unitId) || null;
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -388,13 +389,51 @@ router.post("/save-lesson-progress", (req, res) => {
           });
         }
 
-        res.json({
-          success: true,
-          totalXpAdded: xp,
-          correctAdded: correct,
-          wrongAdded: wrong,
-          streakDays: newStreak
-        });
+        function sendSuccess(unitProgress) {
+          res.json({
+            success: true,
+            totalXpAdded: xp,
+            correctAdded: correct,
+            wrongAdded: wrong,
+            streakDays: newStreak,
+            unitProgress: unitProgress || null
+          });
+        }
+
+        if (!completedUnitId) {
+          return sendSuccess(null);
+        }
+
+        db.run(
+          `
+          INSERT INTO user_unit_progress (
+            user_id,
+            unit_id,
+            status,
+            completed_count,
+            last_completed_at,
+            updated_at
+          )
+          VALUES (1, ?, 'completed', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          ON CONFLICT(user_id, unit_id) DO UPDATE SET
+            status = 'completed',
+            completed_count = completed_count + 1,
+            last_completed_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+          `,
+          [completedUnitId],
+          function (progressError) {
+            if (progressError) {
+              console.error("Error saving unit progress:", progressError.message);
+              return sendSuccess(null);
+            }
+
+            sendSuccess({
+              unitId: completedUnitId,
+              status: "completed"
+            });
+          }
+        );
       }
     );
   });

@@ -10,22 +10,36 @@
   <main class="container">
     <a href="/" class="back-link">Back to Home</a>
 
-    <section class="hero">
-      <h1>Writing Mission</h1>
-      <p>Practice professional English for real work situations.</p>
+    <section class="hero hero-with-mascot compact-mascot">
+      <div>
+        <p class="mascot-kicker">Mini Beagle Coach</p>
+        <h1>Writing Mission</h1>
+        <p>Practice professional English for real work situations.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
     </section>
 
     <section class="card mission-card">
       <p class="mission-label">Scenario</p>
-      <p>You need to send a short message to a coworker asking for more details about an issue.</p>
+      <p><%= mission.scenario %></p>
 
       <p class="mission-label">Task</p>
-      <p>Write a professional message in English asking for more details.</p>
+      <p><%= mission.task %></p>
     </section>
 
-    <section class="card">
+    <section
+      id="writingForm"
+      class="card"
+      data-mission-id="<%= mission.id %>"
+      data-unit-id="<%= mission.unit_id %>"
+      data-xp-reward="<%= mission.xp_reward %>"
+    >
       <label for="writingText">Your message</label>
-      <textarea id="writingText" placeholder="Example: Hi Ana, could you please share more details about the issue?"></textarea>
+      <textarea id="writingText" placeholder="<%= mission.placeholder %>"></textarea>
 
       <button id="checkWritingBtn">Check My Writing</button>
     </section>

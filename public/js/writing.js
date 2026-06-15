@@ -1,7 +1,12 @@
 const checkWritingBtn = document.getElementById("checkWritingBtn");
 const writingText = document.getElementById("writingText");
+const writingForm = document.getElementById("writingForm");
 const writingResult = document.getElementById("writingResult");
 const writingResultContent = document.getElementById("writingResultContent");
+
+const missionId = Number(writingForm.dataset.missionId) || null;
+const missionUnitId = Number(writingForm.dataset.unitId) || 2;
+const missionXp = Number(writingForm.dataset.xpReward) || 10;
 
 checkWritingBtn.addEventListener("click", async () => {
   const text = writingText.value.trim();
@@ -11,9 +16,11 @@ checkWritingBtn.addEventListener("click", async () => {
     return;
   }
 
+  checkWritingBtn.disabled = true;
+  checkWritingBtn.textContent = "Checking...";
   writingResult.classList.remove("hidden");
   writingResultContent.innerHTML = `
-    <div class="feedback-box">
+    <div class="feedback-box writing-loading">
       Checking your writing...
       <br><br>
       Please wait a few seconds.
@@ -31,12 +38,110 @@ checkWritingBtn.addEventListener("click", async () => {
 
     const data = await response.json();
 
-    writingResultContent.innerHTML = `
-      <div class="feedback-box">${data.result || data.error}</div>
-    `;
+    if (data.error) {
+      renderMissionError(data.error);
+      return;
+    }
+
+    const progress = await saveMissionProgress();
+    renderMissionComplete(data.result, progress);
   } catch (error) {
-    writingResultContent.innerHTML = `
-      <div class="feedback-box">Error connecting to the local AI route.</div>
-    `;
+    console.error(error);
+    renderMissionError("Error connecting to the local AI route.");
+  } finally {
+    checkWritingBtn.disabled = false;
+    checkWritingBtn.textContent = "Check My Writing";
   }
 });
+
+async function saveMissionProgress() {
+  try {
+    const response = await fetch("/ai/save-lesson-progress", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        xpEarned: missionXp,
+        correctAnswers: 1,
+        wrongAnswers: 0,
+        unitId: missionUnitId,
+        missionId
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      return {
+        streakDays: data.streakDays,
+        saved: true
+      };
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  return {
+    streakDays: null,
+    saved: false
+  };
+}
+
+function renderMissionComplete(feedback, progress) {
+  writingForm.classList.add("hidden");
+  const streakText = progress && progress.streakDays ? `${progress.streakDays} day` : "Saved";
+
+  writingResultContent.innerHTML = `
+    <div class="lesson-complete writing-complete">
+      <div class="success-badge">✓</div>
+      <h2>Mission complete!</h2>
+      <p class="motivation-message">Nice work. This is exactly the kind of message you will use in real support conversations.</p>
+
+      <div class="completion-stats">
+        <div>
+          <span>${missionXp}</span>
+          <small>XP earned</small>
+        </div>
+        <div>
+          <span>Done</span>
+          <small>Writing task</small>
+        </div>
+        <div>
+          <span>${streakText}</span>
+          <small>Current streak</small>
+        </div>
+      </div>
+
+      <div class="writing-feedback-card">
+        <h3>AI Feedback</h3>
+        <pre>${escapeHtml(feedback)}</pre>
+      </div>
+
+      <a href="/units" class="primary-link continue-mission-link">Continue</a>
+      <button type="button" class="secondary-btn" id="startWritingAgainBtn">Start Again</button>
+    </div>
+  `;
+
+  document.getElementById("startWritingAgainBtn").addEventListener("click", () => {
+    writingText.value = "";
+    writingForm.classList.remove("hidden");
+    writingResult.classList.add("hidden");
+    writingResultContent.innerHTML = "";
+  });
+}
+
+function renderMissionError(message) {
+  writingResultContent.innerHTML = `
+    <div class="feedback-box">${escapeHtml(message)}</div>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}

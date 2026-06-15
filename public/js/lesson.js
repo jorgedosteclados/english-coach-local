@@ -17,27 +17,27 @@ const lessonFeedback = document.getElementById("lessonFeedback");
 const nextQuestionBtn = document.getElementById("nextQuestionBtn");
 const restartLessonBtn = document.getElementById("restartLessonBtn");
 
-// Create score display
 const scoreDisplay = document.createElement("div");
-scoreDisplay.style.margin = "12px 0";
-scoreDisplay.style.padding = "10px 12px";
-scoreDisplay.style.borderRadius = "12px";
-scoreDisplay.style.background = "#f3f7ff";
-scoreDisplay.style.fontWeight = "600";
-scoreDisplay.style.color = "#0b1f4d";
-
+scoreDisplay.className = "score-display";
 progressText.insertAdjacentElement("afterend", scoreDisplay);
 
-// Create confirm button
 const confirmAnswerBtn = document.createElement("button");
 confirmAnswerBtn.textContent = "Confirm Answer";
 confirmAnswerBtn.className = "hidden";
 confirmAnswerBtn.style.marginTop = "14px";
 
+const continueHomeBtn = document.createElement("button");
+continueHomeBtn.textContent = "Continue";
+continueHomeBtn.className = "continue-home-btn hidden";
+continueHomeBtn.addEventListener("click", () => {
+  window.location.href = "/units";
+});
+
 nextQuestionBtn.insertAdjacentElement("beforebegin", confirmAnswerBtn);
+restartLessonBtn.insertAdjacentElement("beforebegin", continueHomeBtn);
 
 function updateScoreDisplay() {
-  scoreDisplay.textContent = `⭐ XP: ${xpEarned} | ✅ Correct: ${correctAnswers} | ❌ Wrong: ${wrongAnswers}`;
+  scoreDisplay.textContent = `XP: ${xpEarned} | Correct: ${correctAnswers} | Wrong: ${wrongAnswers}`;
 }
 
 function playSound(type) {
@@ -70,15 +70,21 @@ async function loadQuestion() {
   selectedButton = null;
   selectedOption = null;
 
+  lessonTitle.classList.remove("hidden");
+  progressText.classList.remove("hidden");
+  questionText.classList.remove("hidden");
+  scoreDisplay.classList.remove("hidden");
+
   updateScoreDisplay();
 
   lessonTitle.textContent = "How do you say:";
   progressText.textContent = `Question ${questionNumber} of ${totalQuestions}`;
-  questionText.textContent = "Generating a new question with AI...";
+  questionText.textContent = "Loading your next question...";
   optionsContainer.innerHTML = "";
   lessonFeedback.classList.add("hidden");
   nextQuestionBtn.classList.add("hidden");
   restartLessonBtn.classList.add("hidden");
+  continueHomeBtn.classList.add("hidden");
   confirmAnswerBtn.classList.add("hidden");
 
   try {
@@ -98,7 +104,7 @@ async function loadQuestion() {
 
     currentQuestion = data;
 
-    questionText.textContent = currentQuestion.questionPt;
+    questionText.textContent = currentQuestion.questionPt || currentQuestion.question;
     optionsContainer.innerHTML = "";
 
     currentQuestion.options.forEach((option) => {
@@ -114,7 +120,7 @@ async function loadQuestion() {
     });
   } catch (error) {
     console.error(error);
-    questionText.textContent = "Error loading AI question.";
+    questionText.textContent = "Error loading lesson question.";
   }
 }
 
@@ -146,6 +152,7 @@ function checkAnswer() {
   }
 
   const buttons = document.querySelectorAll(".option-btn");
+  const explanation = currentQuestion.explanationPt || currentQuestion.explanation;
 
   buttons.forEach((button) => {
     button.disabled = true;
@@ -159,12 +166,12 @@ function checkAnswer() {
     correctAnswers++;
     xpEarned += 10;
     playSound("correct");
-    lessonFeedback.textContent = `✅ Correct! +10 XP. ${currentQuestion.explanationPt}`;
+    lessonFeedback.textContent = `Correct! +10 XP. ${explanation}`;
   } else {
     wrongAnswers++;
     playSound("wrong");
     selectedButton.classList.add("wrong-option");
-    lessonFeedback.textContent = `❌ Not quite. Correct answer: ${currentQuestion.correctAnswer}. ${currentQuestion.explanationPt}`;
+    lessonFeedback.textContent = `Not quite. Correct answer: ${currentQuestion.correctAnswer}. ${explanation}`;
   }
 
   updateScoreDisplay();
@@ -175,25 +182,19 @@ function checkAnswer() {
 }
 
 async function finishLesson() {
-  progressText.textContent = "Completed";
-  lessonTitle.textContent = "Lesson completed!";
-  questionText.textContent = "You finished 5 AI-generated questions.";
+  lessonTitle.classList.add("hidden");
+  progressText.classList.add("hidden");
+  questionText.classList.add("hidden");
+  scoreDisplay.classList.add("hidden");
   optionsContainer.innerHTML = "";
 
-  lessonFeedback.innerHTML = `
-    🎉 Great job! You finished this AI lesson.<br><br>
-    ✅ Correct answers: ${correctAnswers}/${totalQuestions}<br>
-    ❌ Wrong answers: ${wrongAnswers}<br>
-    ⭐ XP earned: ${xpEarned}<br><br>
-    Saving your progress...
-  `;
-
-  updateScoreDisplay();
+  renderCompletionScreen("Saving...", "Saving your progress...");
 
   lessonFeedback.classList.remove("hidden");
   confirmAnswerBtn.classList.add("hidden");
   nextQuestionBtn.classList.add("hidden");
-  restartLessonBtn.classList.remove("hidden");
+  continueHomeBtn.classList.add("hidden");
+  restartLessonBtn.classList.add("hidden");
 
   try {
     const response = await fetch("/ai/save-lesson-progress", {
@@ -204,28 +205,56 @@ async function finishLesson() {
       body: JSON.stringify({
         xpEarned,
         correctAnswers,
-        wrongAnswers
+        wrongAnswers,
+        unitId: 1
       })
     });
 
     const data = await response.json();
 
     if (data.success) {
-      lessonFeedback.innerHTML = `
-        🎉 Great job! You finished this AI lesson.<br><br>
-        ✅ Correct answers: ${correctAnswers}/${totalQuestions}<br>
-        ❌ Wrong answers: ${wrongAnswers}<br>
-        ⭐ XP earned: ${xpEarned}<br>
-        🔥 Current streak: ${data.streakDays} day(s)<br><br>
-        Progress saved successfully.
-      `;
+      renderCompletionScreen(`${data.streakDays} day`, "Progress saved successfully.");
     } else {
-      lessonFeedback.innerHTML += `<br>Progress could not be saved.`;
+      renderCompletionScreen("Not saved", "Progress could not be saved.");
     }
   } catch (error) {
     console.error(error);
-    lessonFeedback.innerHTML += `<br>Progress could not be saved.`;
+    renderCompletionScreen("Not saved", "Progress could not be saved.");
   }
+
+  continueHomeBtn.classList.remove("hidden");
+  restartLessonBtn.classList.remove("hidden");
+}
+
+function renderCompletionScreen(streakText, saveStatus) {
+  lessonFeedback.innerHTML = `
+    <div class="lesson-complete">
+      <div class="success-badge">✓</div>
+      <h2>Lesson complete!</h2>
+      <p class="motivation-message">Great work. You are building the English you need for real customer conversations.</p>
+
+      <div class="completion-stats">
+        <div>
+          <span>${xpEarned}</span>
+          <small>XP earned</small>
+        </div>
+        <div>
+          <span>${correctAnswers}/${totalQuestions}</span>
+          <small>Correct</small>
+        </div>
+        <div>
+          <span>${wrongAnswers}</span>
+          <small>Wrong</small>
+        </div>
+        <div>
+          <span>${streakText}</span>
+          <small>Current streak</small>
+        </div>
+      </div>
+
+      <p class="save-status">${saveStatus}</p>
+    </div>
+  `;
 }
 
 function restartLesson() {
