@@ -122,6 +122,15 @@ db.run(
 
 db.run(
   `
+  UPDATE learning_units
+  SET href = '/conversation',
+      is_locked_default = 0
+  WHERE id = 4
+  `
+);
+
+db.run(
+  `
   INSERT OR IGNORE INTO writing_missions
     (id, unit_id, title, scenario, task, placeholder, xp_reward)
   VALUES

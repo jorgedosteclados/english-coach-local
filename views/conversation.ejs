@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Conversation</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">Back to Home</a>
+
+    <section class="hero hero-with-mascot compact-mascot">
+      <div>
+        <p class="mascot-kicker">Mini Beagle Coach</p>
+        <h1>Customer Conversation</h1>
+        <p>Practice a short support conversation in professional English.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
+    </section>
+
+    <section class="card conversation-scenario">
+      <p class="mission-label">Scenario</p>
+      <p id="conversationScenario">
+        A customer cannot complete an SAP transaction because an error appears after saving.
+      </p>
+    </section>
+
+    <section class="card conversation-card">
+      <div class="conversation-progress" id="conversationProgress">Reply 1 of 4</div>
+      <div class="conversation-thread" id="conversationThread"></div>
+
+      <div id="conversationForm">
+        <label for="conversationText">Your support reply</label>
+        <textarea
+          id="conversationText"
+          placeholder="Example: Hi, thank you for the details. Could you please share the exact error message?"
+        ></textarea>
+        <button id="sendConversationBtn" type="button">Send Reply</button>
+      </div>
+    </section>
+
+    <section id="conversationResult" class="result hidden">
+      <div id="conversationResultContent"></div>
+    </section>
+  </main>
+
+  <script src="/js/feedbackRenderer.js"></script>
+  <script src="/js/conversation.js"></script>
+</body>
+</html>

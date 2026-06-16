@@ -23,6 +23,24 @@
       />
     </section>
 
+    <section class="path-summary">
+      <div>
+        <p class="unit-label">Path progress</p>
+        <h2><%= pathState.completedCount %>/<%= pathState.totalCount %> units completed</h2>
+      </div>
+      <div class="path-progress">
+        <div class="path-progress-label">
+          <span><%= pathState.progressPercent %>% complete</span>
+          <% if (pathState.nextUnit) { %>
+            <span>Next: <%= pathState.nextUnit.title %></span>
+          <% } %>
+        </div>
+        <div class="path-progress-track">
+          <div style="width: <%= pathState.progressPercent %>%"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="path">
       <% if (!units || units.length === 0) { %>
         <section class="card">
@@ -39,6 +57,14 @@
             </p>
             <h2><%= unit.title %></h2>
             <p><%= unit.description %></p>
+            <div class="unit-meta">
+              <span><%= unit.completedCount %> completions</span>
+              <% if (unit.lastCompletedAt) { %>
+                <span>Last practiced <%= new Date(unit.lastCompletedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></span>
+              <% } else { %>
+                <span>Not practiced yet</span>
+              <% } %>
+            </div>
 
             <% if (unit.isLocked || !unit.href) { %>
               <span class="unit-action disabled">Locked</span>

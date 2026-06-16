@@ -5,3 +5,6 @@ english_coach_backup_before_codex.db
 english_coach.db-journal
 npm-debug.log
 .DS_Store
+test-results/
+playwright-report/
+blob-report/

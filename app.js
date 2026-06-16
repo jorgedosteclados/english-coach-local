@@ -8,6 +8,14 @@ const app = express();
 const aiRoutes = require("./routes/ai");
 const PORT = 3000;
 
+const defaultProgress = {
+  total_xp: 0,
+  lessons_completed: 0,
+  total_correct: 0,
+  total_wrong: 0,
+  streak_days: 0
+};
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
@@ -16,29 +24,83 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/ai", aiRoutes);
 
+function buildPathState(rows) {
+  let previousCompleted = true;
+
+  const units = rows.map((unit) => {
+    const isCompleted = unit.status === "completed";
+    const isLocked = Boolean(unit.is_locked_default) || !previousCompleted;
+
+    previousCompleted = isCompleted;
+
+    return {
+      ...unit,
+      isCompleted,
+      isLocked,
+      completedCount: unit.completed_count || 0,
+      lastCompletedAt: unit.last_completed_at || null
+    };
+  });
+
+  const completedCount = units.filter((unit) => unit.isCompleted).length;
+  const totalCount = units.length;
+  const nextUnit =
+    units.find((unit) => !unit.isLocked && !unit.isCompleted && unit.href) ||
+    units.find((unit) => !unit.isLocked && unit.href) ||
+    null;
+
+  return {
+    units,
+    nextUnit,
+    completedCount,
+    totalCount,
+    progressPercent: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  };
+}
+
+function loadLearningPath(callback) {
+  db.all(
+    `
+    SELECT
+      learning_units.*,
+      user_unit_progress.status,
+      user_unit_progress.completed_count,
+      user_unit_progress.last_completed_at
+    FROM learning_units
+    LEFT JOIN user_unit_progress
+      ON user_unit_progress.unit_id = learning_units.id
+      AND user_unit_progress.user_id = 1
+    ORDER BY learning_units.unit_order ASC
+    `,
+    [],
+    (err, rows) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      callback(null, buildPathState(rows || []));
+    }
+  );
+}
+
 app.get("/", (req, res) => {
   db.get("SELECT * FROM user_progress WHERE id = 1", [], (err, progress) => {
+    const selectedProgress = progress || defaultProgress;
+
     if (err) {
       console.error("Error loading user progress:", err.message);
-      return res.render("home", {
-        progress: {
-          total_xp: 0,
-          lessons_completed: 0,
-          total_correct: 0,
-          total_wrong: 0,
-          streak_days: 0
-        }
-      });
     }
 
-    res.render("home", {
-      progress: progress || {
-        total_xp: 0,
-        lessons_completed: 0,
-        total_correct: 0,
-        total_wrong: 0,
-        streak_days: 0
+    loadLearningPath((pathError, pathState) => {
+      if (pathError) {
+        console.error("Error loading learning path:", pathError.message);
       }
+
+      res.render("home", {
+        progress: selectedProgress,
+        pathState: pathState || buildPathState([])
+      });
     });
   });
 });
@@ -52,43 +114,14 @@ app.get("/lesson", (req, res) => {
 });
 
 app.get("/units", (req, res) => {
-  db.all(
-    `
-    SELECT
-      learning_units.*,
-      user_unit_progress.status,
-      user_unit_progress.completed_count
-    FROM learning_units
-    LEFT JOIN user_unit_progress
-      ON user_unit_progress.unit_id = learning_units.id
-      AND user_unit_progress.user_id = 1
-    ORDER BY learning_units.unit_order ASC
-    `,
-    [],
-    (err, rows) => {
-      if (err) {
-        console.error("Error loading units:", err.message);
-        return res.render("units", { units: [] });
-      }
-
-      let previousCompleted = true;
-
-      const units = rows.map((unit) => {
-        const isCompleted = unit.status === "completed";
-        const isLocked = Boolean(unit.is_locked_default) || !previousCompleted;
-
-        previousCompleted = isCompleted;
-
-        return {
-          ...unit,
-          isCompleted,
-          isLocked
-        };
-      });
-
-      res.render("units", { units });
+  loadLearningPath((err, pathState) => {
+    if (err) {
+      console.error("Error loading units:", err.message);
+      return res.render("units", { pathState: buildPathState([]), units: [] });
     }
-  );
+
+    res.render("units", { pathState, units: pathState.units });
+  });
 });
 
 app.get("/writing", (req, res) => {
@@ -134,6 +167,10 @@ app.get("/writing", (req, res) => {
       res.render("writing", { mission: selectedMission });
     }
   );
+});
+
+app.get("/conversation", (req, res) => {
+  res.render("conversation");
 });
 
 app.get("/history", (req, res) => {

@@ -140,10 +140,7 @@ function renderCorrectionComplete(feedback, progress) {
         </div>
       </div>
 
-      <div class="writing-feedback-card">
-        <h3>AI Feedback</h3>
-        <pre>${escapeHtml(feedback)}</pre>
-      </div>
+      ${renderStructuredFeedback(feedback)}
 
       <a href="/units" class="primary-link continue-mission-link">Continue</a>
       <button type="button" class="secondary-btn" id="startCorrectionAgainBtn">Start Again</button>

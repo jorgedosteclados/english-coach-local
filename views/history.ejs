@@ -8,34 +8,41 @@
 </head>
 <body>
   <main class="container">
-    <a href="/" class="back-link">← Back to Home</a>
+    <a href="/" class="back-link">Back to Home</a>
 
-    <section class="hero">
-      <h1>History</h1>
-      <p>Your previous corrections are saved here.</p>
+    <section class="hero hero-with-mascot compact-mascot">
+      <div>
+        <p class="mascot-kicker">Mini Beagle Coach</p>
+        <h1>History</h1>
+        <p>Review, search, and practice your previous corrections.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
     </section>
 
-    <% if (corrections && corrections.length > 0) { %>
-      <% corrections.forEach(function(item) { %>
-        <section class="result">
-          <h2>Correction</h2>
+    <section class="history-tools">
+      <label for="historySearch">Search history</label>
+      <input id="historySearch" type="search" placeholder="Search by phrase or feedback" />
 
-          <p><strong>Original:</strong></p>
-          <div class="feedback-box"><%= item.original_text %></div>
+      <div class="history-filters" aria-label="History filters">
+        <button type="button" class="history-filter active" data-filter="all">All</button>
+        <button type="button" class="history-filter" data-filter="today">Today</button>
+        <button type="button" class="history-filter" data-filter="week">This week</button>
+      </div>
+    </section>
 
-          <p><strong>AI Feedback:</strong></p>
-          <div class="feedback-box"><%= item.ai_feedback %></div>
+    <section id="historyList" class="history-list"></section>
 
-          <p class="date-text">
-            Saved at: <%= item.created_at %>
-          </p>
-        </section>
-      <% }) %>
-    <% } else { %>
-      <section class="card">
-        <p>No corrections saved yet.</p>
-      </section>
-    <% } %>
+    <section id="historyEmpty" class="card hidden">
+      <p>No corrections found.</p>
+    </section>
   </main>
+
+  <script id="historyData" type="application/json"><%- JSON.stringify(corrections || []).replace(/</g, "\\u003c") %></script>
+  <script src="/js/feedbackRenderer.js"></script>
+  <script src="/js/history.js"></script>
 </body>
 </html>

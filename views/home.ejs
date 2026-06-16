@@ -44,10 +44,27 @@
     <section class="path-preview">
       <div>
         <p class="unit-label">Your next step</p>
-        <h2>Customer Support English Path</h2>
-        <p>Follow short lessons, writing missions, and feedback from your mini beagle coach.</p>
+        <h2><%= pathState.nextUnit ? pathState.nextUnit.title : 'Customer Support English Path' %></h2>
+        <p>
+          <%= pathState.nextUnit ? pathState.nextUnit.description : 'All available units are complete. Practice again to keep your support English sharp.' %>
+        </p>
+
+        <div class="path-progress" aria-label="Learning path progress">
+          <div class="path-progress-label">
+            <span><%= pathState.completedCount %>/<%= pathState.totalCount %> units completed</span>
+            <span><%= pathState.progressPercent %>%</span>
+          </div>
+          <div class="path-progress-track">
+            <div style="width: <%= pathState.progressPercent %>%"></div>
+          </div>
+        </div>
       </div>
-      <a href="/units" class="primary-link">Continue Learning</a>
+      <div class="path-preview-actions">
+        <% if (pathState.nextUnit && pathState.nextUnit.href) { %>
+          <a href="<%= pathState.nextUnit.href %>" class="primary-link">Start Next Step</a>
+        <% } %>
+        <a href="/units" class="secondary-link">Continue Learning</a>
+      </div>
     </section>
 
     <section class="menu">
@@ -80,6 +97,14 @@
         <div>
           <h3>Correct My English</h3>
           <p>Get AI feedback on your writing</p>
+        </div>
+      </a>
+
+      <a href="/conversation" class="menu-card yellow">
+        <span>V</span>
+        <div>
+          <h3>Customer Conversation</h3>
+          <p>Practice live support replies</p>
         </div>
       </a>
 

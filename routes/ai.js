@@ -330,6 +330,116 @@ Rules:
   }
 });
 
+router.post("/conversation-message", async (req, res) => {
+  try {
+    const { scenario, messages } = req.body;
+
+    if (!Array.isArray(messages)) {
+      return res.status(400).json({
+        error: "Conversation messages are required."
+      });
+    }
+
+    const prompt = `
+You are roleplaying as a customer in a realistic SAP support conversation.
+
+Scenario:
+${scenario || "A customer reports an issue with an SAP transaction."}
+
+Conversation so far:
+${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}
+
+Reply as the customer only.
+
+Rules:
+- Write only one short customer message in English.
+- Do not correct the user yet.
+- Keep the situation realistic for SAP support or customer service.
+- Ask for clarification, provide details, or react naturally.
+- Do not add labels, markdown, or explanations.
+`;
+
+    const customerReply = await generateAIResponse(prompt);
+
+    res.json({
+      reply: customerReply.trim()
+    });
+  } catch (error) {
+    console.error("Conversation message failed:", error.message);
+    res.status(500).json({
+      error: "Error generating customer reply."
+    });
+  }
+});
+
+router.post("/conversation-feedback", async (req, res) => {
+  try {
+    const { scenario, messages } = req.body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({
+        error: "Conversation messages are required."
+      });
+    }
+
+    const userReplies = messages
+      .filter((message) => message.role === "support")
+      .map((message) => message.content)
+      .join("\n");
+
+    const prompt = `
+You are an English teacher helping a Brazilian Portuguese speaker improve professional English for customer support.
+
+Review the user's support replies in this conversation.
+
+Scenario:
+${scenario || "A customer reports an issue with an SAP transaction."}
+
+Conversation:
+${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}
+
+Return exactly in this format:
+
+Original:
+${userReplies}
+
+Corrected:
+[corrected version of the user's support replies]
+
+More natural:
+[more natural support version]
+
+Professional version:
+[professional customer support version]
+
+Explanation in Portuguese:
+[short explanation in Portuguese about grammar, clarity, and tone]
+
+Useful alternatives:
+- [English support phrase 1]
+- [English support phrase 2]
+- [English support phrase 3]
+
+Rules:
+- Keep corrected replies in English.
+- Use Portuguese only in the explanation.
+- Focus on professional tone, clarity, empathy, and useful SAP support language.
+- Keep the feedback concise.
+`;
+
+    const feedback = await generateAIResponse(prompt);
+
+    res.json({
+      result: feedback
+    });
+  } catch (error) {
+    console.error("Conversation feedback failed:", error.message);
+    res.status(500).json({
+      error: "Error generating conversation feedback."
+    });
+  }
+});
+
 router.post("/save-lesson-progress", (req, res) => {
   const { xpEarned, correctAnswers, wrongAnswers, unitId } = req.body;
 
