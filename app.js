@@ -3,6 +3,10 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const db = require("./database");
+const {
+  buildAchievements,
+  getAchievementForUnit
+} = require("./services/achievementService");
 
 const app = express();
 const aiRoutes = require("./routes/ai");
@@ -99,7 +103,8 @@ app.get("/", (req, res) => {
 
       res.render("home", {
         progress: selectedProgress,
-        pathState: pathState || buildPathState([])
+        pathState: pathState || buildPathState([]),
+        achievements: buildAchievements(selectedProgress, (pathState || buildPathState([])).units)
       });
     });
   });
@@ -117,10 +122,24 @@ app.get("/units", (req, res) => {
   loadLearningPath((err, pathState) => {
     if (err) {
       console.error("Error loading units:", err.message);
-      return res.render("units", { pathState: buildPathState([]), units: [] });
+      const emptyPathState = buildPathState([]);
+
+      return res.render("units", {
+        pathState: emptyPathState,
+        units: [],
+        achievements: []
+      });
     }
 
-    res.render("units", { pathState, units: pathState.units });
+    const achievements = buildAchievements(defaultProgress, pathState.units);
+
+    res.render("units", {
+      pathState,
+      units: pathState.units.map((unit) => ({
+        ...unit,
+        achievement: getAchievementForUnit(unit.id, achievements)
+      }))
+    });
   });
 });
 

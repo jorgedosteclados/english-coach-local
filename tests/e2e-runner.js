@@ -81,6 +81,11 @@ async function main() {
 
   try {
     await run(results, "home and learning path render", async () => {
+      await seedUserProgress({
+        totalXp: 80,
+        activitiesCompleted: 3,
+        streakDays: 3
+      });
       await seedUnitProgress([1, 2, 3]);
 
       const page = await newPage(browser);
@@ -89,6 +94,10 @@ async function main() {
       await expectVisibleText(page, "English Coach Local");
       await expectVisibleText(page, "Customer Conversation");
       await expectVisibleText(page, "3/5 units completed");
+      await expectVisibleText(page, "First Step");
+      await expectVisibleText(page, "Lesson Starter");
+      await expectVisibleText(page, "3-Day Streak");
+      await expectVisibleText(page, "100 XP");
       assert.equal(await page.getByRole("link", { name: "Start Next Step" }).getAttribute("href"), "/conversation");
       await page.getByRole("link", { name: "Continue Learning" }).click();
       await pause();
@@ -97,6 +106,7 @@ async function main() {
       await expectVisibleText(page, "Support Basics");
       await expectVisibleText(page, "3/5 units completed");
       await expectVisibleText(page, "Next: Customer Conversation");
+      await expectVisibleText(page, "Badge earned");
       await pause();
       await page.close();
     });
@@ -529,6 +539,36 @@ function seedUnitProgress(unitIds) {
         resolve();
       });
     });
+  });
+}
+
+function seedUserProgress({ totalXp, activitiesCompleted, streakDays }) {
+  return new Promise((resolve, reject) => {
+    const db = new sqlite3.Database(dbPath);
+
+    db.run(
+      `
+      UPDATE user_progress
+      SET
+        total_xp = ?,
+        lessons_completed = ?,
+        streak_days = ?,
+        last_study_date = DATE('now'),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = 1
+      `,
+      [totalXp, activitiesCompleted, streakDays],
+      (error) => {
+        db.close();
+
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      }
+    );
   });
 }
 

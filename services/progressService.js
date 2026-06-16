@@ -5,6 +5,7 @@ function saveProgress({ xpEarned, correctAnswers, wrongAnswers, unitId }) {
   const correct = Number(correctAnswers) || 0;
   const wrong = Number(wrongAnswers) || 0;
   const completedUnitId = Number(unitId) || null;
+  const activitiesToAdd = 1;
   const today = new Date().toISOString().split("T")[0];
 
   return new Promise((resolve, reject) => {
@@ -22,7 +23,7 @@ function saveProgress({ xpEarned, correctAnswers, wrongAnswers, unitId }) {
         UPDATE user_progress
         SET
           total_xp = total_xp + ?,
-          lessons_completed = lessons_completed + 1,
+          lessons_completed = lessons_completed + ?,
           total_correct = total_correct + ?,
           total_wrong = total_wrong + ?,
           streak_days = ?,
@@ -30,7 +31,7 @@ function saveProgress({ xpEarned, correctAnswers, wrongAnswers, unitId }) {
           updated_at = CURRENT_TIMESTAMP
         WHERE id = 1
         `,
-        [xp, correct, wrong, newStreak, today],
+        [xp, activitiesToAdd, correct, wrong, newStreak, today],
         function (updateError) {
           if (updateError) {
             console.error("Error saving lesson progress:", updateError.message);

@@ -59,6 +59,11 @@
             <p><%= unit.description %></p>
             <div class="unit-meta">
               <span><%= unit.completedCount %> completions</span>
+              <% if (unit.achievement) { %>
+                <span class="<%= unit.achievement.unlocked ? 'badge-unlocked' : '' %>">
+                  <%= unit.achievement.unlocked ? 'Badge earned' : `Badge: ${unit.achievement.title}` %>
+                </span>
+              <% } %>
               <% if (unit.lastCompletedAt) { %>
                 <span>Last practiced <%= new Date(unit.lastCompletedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></span>
               <% } else { %>

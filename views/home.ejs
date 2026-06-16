@@ -35,9 +35,9 @@
       </div>
 
       <div class="stat-card">
-        <span class="icon">L</span>
+        <span class="icon">A</span>
         <h2><%= progress.lessons_completed %></h2>
-        <p>Lessons completed</p>
+        <p>Activities completed</p>
       </div>
     </section>
 
@@ -64,6 +64,25 @@
           <a href="<%= pathState.nextUnit.href %>" class="primary-link">Start Next Step</a>
         <% } %>
         <a href="/units" class="secondary-link">Continue Learning</a>
+      </div>
+    </section>
+
+    <section class="achievements-section">
+      <div class="section-heading">
+        <p class="unit-label">Achievements</p>
+        <h2>Your badges</h2>
+      </div>
+
+      <div class="achievement-grid">
+        <% achievements.forEach((achievement) => { %>
+          <article class="achievement-card <%= achievement.unlocked ? 'unlocked' : 'locked' %>">
+            <span><%= achievement.unlocked ? '✓' : achievement.requirement %></span>
+            <div>
+              <h3><%= achievement.title %></h3>
+              <p><%= achievement.description %></p>
+            </div>
+          </article>
+        <% }) %>
       </div>
     </section>
 
