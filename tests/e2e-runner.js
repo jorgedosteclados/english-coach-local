@@ -93,6 +93,7 @@ async function main() {
       await pause();
       await expectVisibleText(page, "English Coach Local");
       await expectVisibleText(page, "Customer Conversation");
+      await expectVisibleText(page, "Daily Review");
       await expectVisibleText(page, "3/5 units completed");
       await expectVisibleText(page, "First Step");
       await expectVisibleText(page, "Lesson Starter");
@@ -365,6 +366,40 @@ async function main() {
     await run(results, "speaking practice shows recognition flow and saves progress", async () => {
       const page = await newPage(browser);
 
+      await page.route("**/ai/speaking-feedback", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.ok(body.transcript);
+        assert.ok(body.targetPhrase);
+        assert.equal(body.score, 100);
+
+        await route.fulfill({
+          json: {
+            result: [
+              "Original:",
+              body.transcript,
+              "",
+              "Corrected:",
+              body.targetPhrase,
+              "",
+              "More natural:",
+              "Thank you for your patience. I will investigate this issue and keep you updated.",
+              "",
+              "Professional version:",
+              "Thank you for your patience. I am investigating this issue and will update you as soon as I have more information.",
+              "",
+              "Explanation in Portuguese:",
+              "A fala esta clara. Para soar mais natural em call, use ritmo calmo e destaque 'keep you updated'.",
+              "",
+              "Useful alternatives:",
+              "- I will keep you updated.",
+              "- I am checking this internally.",
+              "- I will get back to you as soon as possible."
+            ].join("\n")
+          }
+        });
+      });
+
       await page.route("**/ai/save-lesson-progress", async (route) => {
         const body = route.request().postDataJSON();
 
@@ -396,8 +431,53 @@ async function main() {
       });
 
       await expectVisibleText(page, "Match score: 100%");
+      await expectVisibleText(page, "AI Feedback");
+      await expectVisibleText(page, "I will keep you updated.");
       await page.getByRole("button", { name: "I Practiced This" }).click();
       await expectVisibleText(page, "Speaking complete!");
+      await expectVisibleText(page, "Progress saved successfully.");
+      await pause();
+      await page.close();
+    });
+
+    await run(results, "daily review uses visual listening cards and saves progress", async () => {
+      const page = await newPage(browser);
+
+      await page.route("**/ai/save-lesson-progress", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.equal(body.xpEarned, 32);
+        assert.equal(body.correctAnswers, 4);
+        assert.equal(body.wrongAnswers, 0);
+        assert.equal(body.unitId, null);
+
+        await route.fulfill({
+          json: {
+            success: true,
+            streakDays: 8,
+            unitProgress: null
+          }
+        });
+      });
+
+      await page.goto(`${baseURL}/review`);
+      await pause();
+      await expectVisibleText(page, "Daily Review");
+      await expectVisibleText(page, "Card 1 of 4");
+
+      for (let index = 0; index < 4; index++) {
+        const targetPhrase = await page.locator("#reviewTargetPhrase").textContent();
+
+        await page.getByRole("button", { name: "Listen" }).click();
+        await page.getByLabel("Your English phrase").fill(targetPhrase.trim());
+        await page.getByRole("button", { name: "Check Answer" }).click();
+        await expectVisibleText(page, "Good recall.");
+        await expectVisibleText(page, "Target phrase");
+        await expectVisibleText(page, "Professional version:");
+        await page.getByRole("button", { name: "Next Card" }).click();
+      }
+
+      await expectVisibleText(page, "Review complete!");
       await expectVisibleText(page, "Progress saved successfully.");
       await pause();
       await page.close();

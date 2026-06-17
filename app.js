@@ -12,6 +12,7 @@ const app = express();
 const aiRoutes = require("./routes/ai");
 const { lessonCategories } = require("./data/lessonCategories");
 const speakingPrompts = require("./data/speakingPrompts");
+const visualReviewCards = require("./data/visualReviewCards");
 const PORT = 3000;
 
 const defaultProgress = {
@@ -118,6 +119,10 @@ app.get("/correct", (req, res) => {
 
 app.get("/lesson", (req, res) => {
   res.render("lesson", { lessonCategories });
+});
+
+app.get("/review", (req, res) => {
+  res.render("review", { reviewCards: visualReviewCards });
 });
 
 app.get("/units", (req, res) => {

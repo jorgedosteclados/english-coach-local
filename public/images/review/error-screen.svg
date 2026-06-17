@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">SAP error screen illustration</title>
+  <desc id="desc">A support screen showing an error state and a screenshot request context.</desc>
+  <rect width="640" height="360" rx="28" fill="#eef4ff"/>
+  <rect x="72" y="56" width="496" height="248" rx="18" fill="#ffffff" stroke="#b2ccff" stroke-width="4"/>
+  <rect x="72" y="56" width="496" height="54" rx="18" fill="#0b5cff"/>
+  <circle cx="104" cy="83" r="8" fill="#ffdd57"/>
+  <circle cx="130" cy="83" r="8" fill="#ff8a8a"/>
+  <circle cx="156" cy="83" r="8" fill="#58cc02"/>
+  <rect x="112" y="142" width="148" height="22" rx="8" fill="#d0d5dd"/>
+  <rect x="112" y="184" width="278" height="18" rx="8" fill="#e4e7ec"/>
+  <rect x="112" y="218" width="226" height="18" rx="8" fill="#e4e7ec"/>
+  <circle cx="484" cy="184" r="48" fill="#fff1f3" stroke="#f04438" stroke-width="5"/>
+  <path d="M484 152v42" stroke="#f04438" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="484" cy="218" r="6" fill="#f04438"/>
+</svg>

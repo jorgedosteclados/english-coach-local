@@ -6,7 +6,8 @@ const { generateAIResponse } = require("../services/aiService");
 const {
   buildCorrectionPrompt,
   buildConversationFeedbackPrompt,
-  buildConversationMessagePrompt
+  buildConversationMessagePrompt,
+  buildSpeakingFeedbackPrompt
 } = require("../services/promptService");
 const { getLessonQuestion } = require("../services/questionService");
 const { saveProgress } = require("../services/progressService");
@@ -103,6 +104,36 @@ router.post("/conversation-feedback", async (req, res) => {
     console.error("Conversation feedback failed:", error.message);
     res.status(500).json({
       error: "Error generating conversation feedback."
+    });
+  }
+});
+
+router.post("/speaking-feedback", async (req, res) => {
+  try {
+    const { scenario, targetPhrase, transcript, score } = req.body;
+
+    if (!transcript || transcript.trim() === "") {
+      return res.status(400).json({
+        error: "Speech transcript is required."
+      });
+    }
+
+    const feedback = await generateAIResponse(
+      buildSpeakingFeedbackPrompt({
+        scenario,
+        targetPhrase,
+        transcript,
+        score: Number(score) || 0
+      })
+    );
+
+    res.json({
+      result: feedback
+    });
+  } catch (error) {
+    console.error("Speaking feedback failed:", error.message);
+    res.status(500).json({
+      error: "Error generating speaking feedback."
     });
   }
 });

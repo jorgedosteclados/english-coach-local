@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Review</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">Back to Home</a>
+
+    <section class="hero hero-with-mascot compact-mascot">
+      <div>
+        <p class="mascot-kicker">Mini Beagle Coach</p>
+        <h1>Daily Review</h1>
+        <p>Use visual memory, listening, and speaking to keep support phrases active.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
+    </section>
+
+    <section class="card visual-review-card">
+      <div class="review-progress" id="reviewProgress">Card 1 of <%= reviewCards.length %></div>
+
+      <img id="reviewImage" class="review-image" src="<%= reviewCards[0].image %>" alt="Visual review scene" />
+
+      <div>
+        <p class="mission-label" id="reviewCategory"><%= reviewCards[0].category %></p>
+        <h2 id="reviewPrompt"><%= reviewCards[0].promptPt %></h2>
+        <p id="reviewContext"><%= reviewCards[0].contextPt %></p>
+      </div>
+
+      <div class="review-actions">
+        <button id="listenPhraseBtn" type="button">Listen</button>
+        <button id="speakReviewBtn" type="button" class="secondary-btn">Speak</button>
+      </div>
+
+      <label for="reviewAnswer">Your English phrase</label>
+      <textarea id="reviewAnswer" placeholder="Type your answer or use Speak."></textarea>
+
+      <div class="review-answer hidden" id="reviewAnswerBox">
+        <span>Target phrase</span>
+        <p id="reviewTargetPhrase"></p>
+        <small id="reviewTip"></small>
+      </div>
+
+      <div id="reviewFeedback" class="feedback-box hidden"></div>
+
+      <button id="checkReviewBtn" type="button">Check Answer</button>
+      <button id="nextReviewBtn" type="button" class="hidden">Next Card</button>
+    </section>
+
+    <section id="reviewResult" class="result hidden">
+      <div id="reviewResultContent"></div>
+    </section>
+
+    <script type="application/json" id="reviewCardsData"><%- JSON.stringify(reviewCards) %></script>
+  </main>
+
+  <script src="/js/review.js"></script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+const speakingScenario = document.getElementById("speakingScenario").textContent.trim();
 const targetPhrase = document.getElementById("targetPhrase").textContent.trim();
 const recordSpeechBtn = document.getElementById("recordSpeechBtn");
 const tryAgainSpeechBtn = document.getElementById("tryAgainSpeechBtn");
@@ -17,6 +18,7 @@ let lastTranscript = "";
 let lastScore = 0;
 let isListening = false;
 let progressSaved = false;
+let feedbackRequestId = 0;
 
 function normalizeText(text) {
   return text
@@ -64,6 +66,58 @@ function renderFeedback(transcript) {
   speakingFeedback.classList.remove("hidden");
   completeSpeakingBtn.classList.remove("hidden");
   tryAgainSpeechBtn.classList.remove("hidden");
+  loadAISpeakingFeedback(transcript);
+}
+
+async function loadAISpeakingFeedback(transcript) {
+  const currentRequestId = feedbackRequestId + 1;
+  feedbackRequestId = currentRequestId;
+
+  speakingFeedback.innerHTML = `
+    <p>${escapeHtml(speakingFeedback.textContent)}</p>
+    <p class="ai-feedback-loading">Preparing AI speaking feedback...</p>
+  `;
+
+  try {
+    const response = await fetch("/ai/speaking-feedback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        scenario: speakingScenario,
+        targetPhrase,
+        transcript,
+        score: lastScore
+      })
+    });
+
+    const data = await response.json();
+
+    if (currentRequestId !== feedbackRequestId) {
+      return;
+    }
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    speakingFeedback.innerHTML = `
+      <p>Match score: ${lastScore}%.</p>
+      ${renderStructuredFeedback(data.result)}
+    `;
+  } catch (error) {
+    console.error(error);
+
+    if (currentRequestId !== feedbackRequestId) {
+      return;
+    }
+
+    speakingFeedback.innerHTML = `
+      <p>Match score: ${lastScore}%.</p>
+      <p class="ai-feedback-loading">AI speaking feedback is unavailable right now.</p>
+    `;
+  }
 }
 
 function setListeningState(nextListeningState) {

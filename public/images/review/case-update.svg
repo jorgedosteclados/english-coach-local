@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Case update illustration</title>
+  <desc id="desc">A support timeline with an active investigation and customer update.</desc>
+  <rect width="640" height="360" rx="28" fill="#f0fdf4"/>
+  <rect x="92" y="58" width="456" height="244" rx="22" fill="#ffffff" stroke="#86efac" stroke-width="4"/>
+  <path d="M182 118v132" stroke="#d0d5dd" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="182" cy="122" r="24" fill="#58cc02"/>
+  <circle cx="182" cy="184" r="24" fill="#0b5cff"/>
+  <circle cx="182" cy="248" r="24" fill="#d0d5dd"/>
+  <path d="M170 122l8 8 16-18" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="234" y="106" width="216" height="18" rx="8" fill="#d0d5dd"/>
+  <rect x="234" y="138" width="280" height="16" rx="8" fill="#e4e7ec"/>
+  <rect x="234" y="172" width="248" height="18" rx="8" fill="#b2ccff"/>
+  <rect x="234" y="204" width="188" height="16" rx="8" fill="#e4e7ec"/>
+  <rect x="234" y="238" width="230" height="18" rx="8" fill="#d0d5dd"/>
+</svg>

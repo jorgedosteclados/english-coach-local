@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Transaction code illustration</title>
+  <desc id="desc">A SAP support form asking for a transaction code.</desc>
+  <rect width="640" height="360" rx="28" fill="#fffbeb"/>
+  <rect x="90" y="58" width="460" height="244" rx="22" fill="#ffffff" stroke="#fedf89" stroke-width="4"/>
+  <rect x="128" y="98" width="384" height="56" rx="14" fill="#f2f4f7"/>
+  <rect x="154" y="116" width="88" height="20" rx="8" fill="#98a2b3"/>
+  <rect x="128" y="184" width="176" height="56" rx="14" fill="#eef4ff" stroke="#84caff" stroke-width="3"/>
+  <rect x="336" y="184" width="176" height="56" rx="14" fill="#f8fbff" stroke="#d0d5dd" stroke-width="3"/>
+  <path d="M178 212h74" stroke="#0b5cff" stroke-width="12" stroke-linecap="round"/>
+  <path d="M386 212h74" stroke="#d0d5dd" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="474" cy="112" r="30" fill="#0b5cff"/>
+  <path d="M462 112h24M474 100v24" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+</svg>

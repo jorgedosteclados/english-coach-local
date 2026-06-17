@@ -337,6 +337,16 @@ button:hover {
   white-space: pre-wrap;
 }
 
+.feedback-box .feedback-summary {
+  white-space: normal;
+}
+
+.ai-feedback-loading {
+  margin: 10px 0 0;
+  color: #667085;
+  font-weight: bold;
+}
+
 .date-text {
   margin-top: 12px;
   font-size: 13px;
@@ -1053,6 +1063,81 @@ button:hover {
   border-radius: 12px;
   background: #fffaeb;
   color: #93370d;
+  line-height: 1.4;
+}
+
+.visual-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-progress {
+  color: #667085;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.review-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid #d0d5dd;
+  border-radius: 14px;
+  background: #eef4ff;
+}
+
+.visual-review-card h2 {
+  margin: 0 0 8px;
+  color: #0b1f4d;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.visual-review-card p {
+  margin-top: 0;
+  color: #475467;
+  line-height: 1.45;
+}
+
+.review-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.review-actions button {
+  margin: 0;
+}
+
+.review-answer {
+  padding: 16px;
+  border: 1px solid #86efac;
+  border-radius: 14px;
+  background: #f0fdf4;
+}
+
+.review-answer span {
+  display: block;
+  margin-bottom: 8px;
+  color: #027a48;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.review-answer p {
+  margin: 0;
+  color: #0b1f4d;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.review-answer small {
+  display: block;
+  margin-top: 10px;
+  color: #475467;
   line-height: 1.4;
 }
 

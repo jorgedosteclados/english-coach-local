@@ -140,9 +140,59 @@ Rules:
 `;
 }
 
+function buildSpeakingFeedbackPrompt({ scenario, targetPhrase, transcript, score }) {
+  return `
+You are an English speaking coach helping a Brazilian Portuguese speaker improve professional English for customer support calls.
+
+Review the user's speech transcript.
+
+Scenario:
+${scenario || "A customer support call."}
+
+Target phrase:
+${targetPhrase}
+
+User transcript from speech recognition:
+${transcript}
+
+Match score:
+${score}%
+
+Return exactly in this format:
+
+Original:
+${transcript}
+
+Corrected:
+[corrected English version based on what the user tried to say]
+
+More natural:
+[more natural spoken support version]
+
+Professional version:
+[professional customer support call version]
+
+Explanation in Portuguese:
+[short explanation in Portuguese about clarity, grammar, likely pronunciation issues from the transcript, and tone]
+
+Useful alternatives:
+- [English speaking phrase 1]
+- [English speaking phrase 2]
+- [English speaking phrase 3]
+
+Rules:
+- Keep corrected replies in English.
+- Use Portuguese only in the explanation.
+- Do not claim you heard audio; you only have the speech recognition transcript.
+- Focus on clarity for live support calls, natural spoken English, and professional tone.
+- Keep the feedback concise.
+`;
+}
+
 module.exports = {
   buildCorrectionPrompt,
   buildLessonQuestionPrompt,
   buildConversationMessagePrompt,
-  buildConversationFeedbackPrompt
+  buildConversationFeedbackPrompt,
+  buildSpeakingFeedbackPrompt
 };
