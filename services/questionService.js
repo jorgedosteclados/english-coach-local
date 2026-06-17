@@ -1,11 +1,25 @@
 const db = require("../database");
 const { getLessonCategory } = require("../data/lessonCategories");
 const fallbackQuestions = require("../data/fallbackQuestions");
+const seedLessonQuestions = require("../data/seedLessonQuestions");
 const { generateAIResponse } = require("./aiService");
 const { buildLessonQuestionPrompt } = require("./promptService");
 
-function getFallbackQuestion() {
-  return fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+function getRandomItem(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function getFallbackQuestion(categoryId) {
+  const category = getLessonCategory(categoryId);
+  const categoryQuestions = category.source
+    ? seedLessonQuestions.filter((question) => question.source === category.source)
+    : [];
+
+  if (categoryQuestions.length > 0) {
+    return getRandomItem(categoryQuestions);
+  }
+
+  return getRandomItem(fallbackQuestions);
 }
 
 function loadSavedQuestion(categoryId) {
@@ -66,7 +80,9 @@ function loadSavedQuestion(categoryId) {
   });
 }
 
-function saveAIQuestion(question) {
+function saveAIQuestion(question, category) {
+  const source = category.source || "ai";
+
   return new Promise((resolve) => {
     db.run(
       `
@@ -79,7 +95,7 @@ function saveAIQuestion(question) {
         JSON.stringify(question.options),
         question.correctAnswer,
         question.explanationPt,
-        "ai"
+        source
       ],
       function (insertError) {
         if (insertError) {
@@ -111,6 +127,7 @@ function parseAIQuestion(aiTextRaw) {
 }
 
 async function getLessonQuestion(categoryId) {
+  const category = getLessonCategory(categoryId);
   const savedQuestion = await loadSavedQuestion(categoryId);
 
   if (savedQuestion) {
@@ -118,13 +135,13 @@ async function getLessonQuestion(categoryId) {
   }
 
   try {
-    const aiTextRaw = await generateAIResponse(buildLessonQuestionPrompt());
+    const aiTextRaw = await generateAIResponse(buildLessonQuestionPrompt(category));
     const question = parseAIQuestion(aiTextRaw);
 
-    return await saveAIQuestion(question);
+    return await saveAIQuestion(question, category);
   } catch (error) {
     console.error("AI lesson generation failed:", error.message);
-    return getFallbackQuestion();
+    return getFallbackQuestion(categoryId);
   }
 }
 

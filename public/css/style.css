@@ -984,6 +984,78 @@ button:hover {
   color: #027a48;
 }
 
+.speaking-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.speaking-card p {
+  margin-top: 0;
+}
+
+.speaking-target,
+.speech-transcript,
+.speaking-better {
+  padding: 16px;
+  border: 1px solid #d0d5dd;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.speaking-target span,
+.speech-transcript span,
+.speaking-better span {
+  display: block;
+  margin-bottom: 8px;
+  color: #0b5cff;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.speaking-target p {
+  margin: 0;
+  color: #0b1f4d;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.35;
+}
+
+.speech-transcript p,
+.speaking-better p {
+  margin: 0;
+  color: #101828;
+  line-height: 1.45;
+}
+
+.speaking-better small {
+  display: block;
+  margin-top: 10px;
+  color: #667085;
+  line-height: 1.4;
+}
+
+.speaking-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.speaking-controls button {
+  margin: 0;
+}
+
+.speech-support-message {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #fedf89;
+  border-radius: 12px;
+  background: #fffaeb;
+  color: #93370d;
+  line-height: 1.4;
+}
+
 @media (min-width: 620px) {
   .feedback-grid,
   .history-preview {

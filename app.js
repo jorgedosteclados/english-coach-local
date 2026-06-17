@@ -11,6 +11,7 @@ const {
 const app = express();
 const aiRoutes = require("./routes/ai");
 const { lessonCategories } = require("./data/lessonCategories");
+const speakingPrompts = require("./data/speakingPrompts");
 const PORT = 3000;
 
 const defaultProgress = {
@@ -191,6 +192,12 @@ app.get("/writing", (req, res) => {
 
 app.get("/conversation", (req, res) => {
   res.render("conversation");
+});
+
+app.get("/speaking", (req, res) => {
+  const prompt = speakingPrompts[Math.floor(Math.random() * speakingPrompts.length)];
+
+  res.render("speaking", { prompt });
 });
 
 app.get("/history", (req, res) => {

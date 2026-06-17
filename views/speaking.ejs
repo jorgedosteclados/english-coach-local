@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speaking Practice</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/" class="back-link">Back to Home</a>
+
+    <section class="hero hero-with-mascot compact-mascot">
+      <div>
+        <p class="mascot-kicker">Mini Beagle Coach</p>
+        <h1>Speaking Practice</h1>
+        <p>Practice clear support phrases for calls and live conversations.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
+    </section>
+
+    <section class="card speaking-card">
+      <p class="mission-label">Scenario</p>
+      <p id="speakingScenario"><%= prompt.scenario %></p>
+
+      <div class="speaking-target">
+        <span>Say this aloud</span>
+        <p id="targetPhrase"><%= prompt.targetPhrase %></p>
+      </div>
+
+      <div class="speaking-controls">
+        <button id="recordSpeechBtn" type="button">Start Speaking</button>
+        <button id="tryAgainSpeechBtn" type="button" class="secondary-btn hidden">Try Again</button>
+      </div>
+
+      <p id="speechSupportMessage" class="speech-support-message hidden"></p>
+
+      <div class="speech-transcript">
+        <span>Your transcript</span>
+        <p id="speechTranscript">Your spoken words will appear here.</p>
+      </div>
+
+      <div id="speakingFeedback" class="feedback-box hidden"></div>
+
+      <button id="showBetterPhraseBtn" type="button" class="secondary-btn">Show Better Version</button>
+      <div id="betterPhrase" class="speaking-better hidden">
+        <span>More natural version</span>
+        <p><%= prompt.betterVersion %></p>
+        <small><%= prompt.tipPt %></small>
+      </div>
+
+      <button id="completeSpeakingBtn" type="button" class="continue-home-btn hidden">I Practiced This</button>
+    </section>
+
+    <section id="speakingResult" class="result hidden">
+      <div id="speakingResultContent"></div>
+    </section>
+  </main>
+
+  <script src="/js/speaking.js"></script>
+</body>
+</html>

@@ -362,6 +362,47 @@ async function main() {
       await page.close();
     });
 
+    await run(results, "speaking practice shows recognition flow and saves progress", async () => {
+      const page = await newPage(browser);
+
+      await page.route("**/ai/save-lesson-progress", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.deepEqual(body, {
+          xpEarned: 20,
+          correctAnswers: 1,
+          wrongAnswers: 0,
+          unitId: 5
+        });
+
+        await route.fulfill({
+          json: {
+            success: true,
+            streakDays: 7,
+            unitProgress: { unitId: 5, status: "completed" }
+          }
+        });
+      });
+
+      await page.goto(`${baseURL}/speaking`);
+      await pause();
+      await expectVisibleText(page, "Speaking Practice");
+      await expectVisibleText(page, "Say this aloud");
+      await page.getByRole("button", { name: "Show Better Version" }).click();
+      await expectVisibleText(page, "More natural version");
+
+      await page.evaluate(() => {
+        renderFeedback(document.getElementById("targetPhrase").textContent);
+      });
+
+      await expectVisibleText(page, "Match score: 100%");
+      await page.getByRole("button", { name: "I Practiced This" }).click();
+      await expectVisibleText(page, "Speaking complete!");
+      await expectVisibleText(page, "Progress saved successfully.");
+      await pause();
+      await page.close();
+    });
+
     await run(results, "history searches, expands details, and starts practice again", async () => {
       await seedHistoryCorrection();
 

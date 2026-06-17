@@ -4,6 +4,7 @@ english_coach.db
 english_coach_backup_before_codex.db
 english_coach.db-journal
 npm-debug.log
+cloudflared*.log
 .DS_Store
 test-results/
 playwright-report/

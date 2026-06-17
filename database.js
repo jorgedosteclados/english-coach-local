@@ -1,4 +1,5 @@
 const sqlite3 = require("sqlite3").verbose();
+const seedLessonQuestions = require("./data/seedLessonQuestions");
 
 const db = new sqlite3.Database("./english_coach.db", (err) => {
   if (err) {
@@ -65,6 +66,36 @@ db.run(`
   )
 `);
 
+const seedLessonQuestionStatement = db.prepare(`
+  INSERT INTO lesson_questions
+    (question_pt, options_json, correct_answer, explanation_pt, source)
+  SELECT ?, ?, ?, ?, ?
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM lesson_questions
+    WHERE question_pt = ?
+      AND correct_answer = ?
+  )
+`);
+
+seedLessonQuestions.forEach((question) => {
+  seedLessonQuestionStatement.run([
+    question.questionPt,
+    JSON.stringify(question.options),
+    question.correctAnswer,
+    question.explanationPt,
+    question.source,
+    question.questionPt,
+    question.correctAnswer
+  ]);
+});
+
+seedLessonQuestionStatement.finalize((seedError) => {
+  if (seedError) {
+    console.error("Error seeding lesson questions:", seedError.message);
+  }
+});
+
 db.run(`
   CREATE TABLE IF NOT EXISTS learning_units (
     id INTEGER PRIMARY KEY,
@@ -126,6 +157,15 @@ db.run(
   SET href = '/conversation',
       is_locked_default = 0
   WHERE id = 4
+  `
+);
+
+db.run(
+  `
+  UPDATE learning_units
+  SET href = '/speaking',
+      is_locked_default = 0
+  WHERE id = 5
   `
 );
 

@@ -38,13 +38,15 @@ Useful alternatives:
 `;
 }
 
-function buildLessonQuestionPrompt() {
+function buildLessonQuestionPrompt(category) {
+  const lessonFocus = category && category.id !== "all" ? category.label : "SAP Support, customer service, or professional work";
+
   return `
 You are an English teacher helping a Brazilian Portuguese speaker learn professional English.
 
 Create ONE multiple-choice question for an English lesson.
 
-The question must be useful for SAP Support, customer service, or professional work.
+The question must be useful for this practice focus: ${lessonFocus}.
 
 Return ONLY valid JSON in this exact format:
 
