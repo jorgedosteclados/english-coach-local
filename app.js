@@ -10,6 +10,7 @@ const {
 
 const app = express();
 const aiRoutes = require("./routes/ai");
+const { lessonCategories } = require("./data/lessonCategories");
 const PORT = 3000;
 
 const defaultProgress = {
@@ -115,7 +116,7 @@ app.get("/correct", (req, res) => {
 });
 
 app.get("/lesson", (req, res) => {
-  res.render("lesson");
+  res.render("lesson", { lessonCategories });
 });
 
 app.get("/units", (req, res) => {

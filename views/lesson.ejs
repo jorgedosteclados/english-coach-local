@@ -23,6 +23,15 @@
       />
     </section>
 
+    <section class="lesson-category-card">
+      <label for="lessonCategory">Practice focus</label>
+      <select id="lessonCategory">
+        <% lessonCategories.forEach((category) => { %>
+          <option value="<%= category.id %>"><%= category.label %></option>
+        <% }) %>
+      </select>
+    </section>
+
     <section class="card">
       <p class="lesson-progress">Question 1 of 5</p>
 

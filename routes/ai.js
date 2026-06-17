@@ -46,7 +46,7 @@ router.post("/correct", async (req, res) => {
 
 router.post("/generate-lesson-question", async (req, res) => {
   try {
-    const question = await getLessonQuestion();
+    const question = await getLessonQuestion(req.body.category);
 
     res.json(question);
   } catch (error) {

@@ -277,6 +277,16 @@ input[type="search"] {
   font-size: 16px;
 }
 
+select {
+  width: 100%;
+  border: 1px solid #d0d5dd;
+  border-radius: 14px;
+  padding: 13px 14px;
+  background: #ffffff;
+  color: #101828;
+  font-size: 16px;
+}
+
 button {
   margin-top: 14px;
   width: 100%;
@@ -343,6 +353,15 @@ button:hover {
 
 .mission-card {
   margin-bottom: 18px;
+}
+
+.lesson-category-card {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #eaecf0;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
 }
 
 .mission-label {

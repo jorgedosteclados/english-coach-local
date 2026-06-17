@@ -113,11 +113,23 @@ async function main() {
 
     await run(results, "lesson completes and saves progress", async () => {
       const page = await newPage(browser);
-      let questionIndex = 0;
+      let categoryQuestionIndex = 0;
+      const requestedCategories = [];
 
       await page.route("**/ai/generate-lesson-question", async (route) => {
-        const question = mockQuestions[questionIndex] || mockQuestions[mockQuestions.length - 1];
-        questionIndex += 1;
+        const body = route.request().postDataJSON();
+        const category = body.category || "all";
+        requestedCategories.push(category);
+
+        const question =
+          category === "request-info"
+            ? mockQuestions[categoryQuestionIndex] || mockQuestions[mockQuestions.length - 1]
+            : mockQuestions[0];
+
+        if (category === "request-info") {
+          categoryQuestionIndex += 1;
+        }
+
         await route.fulfill({ json: question });
       });
 
@@ -145,6 +157,21 @@ async function main() {
 
       await page.goto(`${baseURL}/lesson`);
       await pause();
+      await expectVisibleText(page, "Practice focus");
+      const categorySelected = await page.evaluate(() => {
+        const select = document.getElementById("lessonCategory");
+
+        if (!select) {
+          return false;
+        }
+
+        select.value = "request-info";
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+      });
+
+      assert.equal(categorySelected, true);
+      await pause();
 
       for (const question of mockQuestions) {
         await expectVisibleText(page, question.questionPt);
@@ -160,6 +187,7 @@ async function main() {
       await expectVisibleText(page, "Lesson complete!");
       await expectVisibleText(page, "Progress saved successfully.");
       await expectVisibleText(page, "XP earned");
+      assert.ok(requestedCategories.includes("request-info"));
       await pause();
       await page.close();
     });

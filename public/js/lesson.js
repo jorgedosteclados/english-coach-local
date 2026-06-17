@@ -20,6 +20,9 @@ const optionsContainer = document.querySelector(".options");
 const lessonFeedback = document.getElementById("lessonFeedback");
 const nextQuestionBtn = document.getElementById("nextQuestionBtn");
 const restartLessonBtn = document.getElementById("restartLessonBtn");
+const lessonCategorySelect = document.getElementById("lessonCategory");
+
+let selectedCategory = lessonCategorySelect ? lessonCategorySelect.value : "all";
 
 const scoreDisplay = document.createElement("div");
 scoreDisplay.className = "score-display";
@@ -78,7 +81,8 @@ function saveLessonState() {
       wrongAnswers,
       xpEarned,
       selectedOption,
-      currentQuestionAnswered
+      currentQuestionAnswered,
+      selectedCategory
     })
   );
 }
@@ -109,6 +113,11 @@ function restoreLessonState() {
     xpEarned = Number(state.xpEarned) || 0;
     selectedOption = state.selectedOption || null;
     currentQuestionAnswered = Boolean(state.currentQuestionAnswered);
+    selectedCategory = state.selectedCategory || "all";
+
+    if (lessonCategorySelect) {
+      lessonCategorySelect.value = selectedCategory;
+    }
 
     showQuestionShell();
     renderQuestion(currentQuestion);
@@ -183,7 +192,10 @@ async function loadQuestion() {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
-      }
+      },
+      body: JSON.stringify({
+        category: selectedCategory
+      })
     });
 
     const data = await response.json();
@@ -409,6 +421,7 @@ function restartLesson() {
   currentQuestionAnswered = false;
   lessonCompleted = false;
   lessonSaveInProgress = false;
+  selectedCategory = lessonCategorySelect ? lessonCategorySelect.value : "all";
 
   clearLessonState();
   updateScoreDisplay();
@@ -433,6 +446,12 @@ nextQuestionBtn.addEventListener("click", () => {
 restartLessonBtn.addEventListener("click", () => {
   restartLesson();
 });
+
+if (lessonCategorySelect) {
+  lessonCategorySelect.addEventListener("change", () => {
+    restartLesson();
+  });
+}
 
 if (!restoreLessonState()) {
   loadQuestion();
