@@ -3,17 +3,17 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const db = require("./database");
-const {
-  buildAchievements,
-  getAchievementForUnit
-} = require("./services/achievementService");
+const { buildAchievements } = require("./services/achievementService");
 
 const app = express();
 const aiRoutes = require("./routes/ai");
 const { lessonCategories } = require("./data/lessonCategories");
 const speakingPrompts = require("./data/speakingPrompts");
 const visualReviewCards = require("./data/visualReviewCards");
+const { learningPathUnits } = require("./data/learningPath");
 const PORT = 3000;
+
+const learningPathMetadata = new Map(learningPathUnits.map((unit) => [unit.id, unit]));
 
 const defaultProgress = {
   total_xp: 0,
@@ -42,6 +42,9 @@ function buildPathState(rows) {
 
     return {
       ...unit,
+      sectionId: learningPathMetadata.get(unit.id)?.sectionId || 1,
+      sectionTitle: learningPathMetadata.get(unit.id)?.sectionTitle || "Learning Path",
+      sectionDescription: learningPathMetadata.get(unit.id)?.sectionDescription || "",
       isCompleted,
       isLocked,
       completedCount: unit.completed_count || 0,
@@ -55,12 +58,20 @@ function buildPathState(rows) {
     units.find((unit) => !unit.isLocked && !unit.isCompleted && unit.href) ||
     units.find((unit) => !unit.isLocked && unit.href) ||
     null;
+  const currentSectionUnit = nextUnit || units[units.length - 1] || null;
 
   return {
     units,
     nextUnit,
     completedCount,
     totalCount,
+    currentSection: currentSectionUnit
+      ? {
+          id: currentSectionUnit.sectionId,
+          title: currentSectionUnit.sectionTitle,
+          description: currentSectionUnit.sectionDescription
+        }
+      : null,
     progressPercent: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   };
 }
@@ -126,28 +137,7 @@ app.get("/review", (req, res) => {
 });
 
 app.get("/units", (req, res) => {
-  loadLearningPath((err, pathState) => {
-    if (err) {
-      console.error("Error loading units:", err.message);
-      const emptyPathState = buildPathState([]);
-
-      return res.render("units", {
-        pathState: emptyPathState,
-        units: [],
-        achievements: []
-      });
-    }
-
-    const achievements = buildAchievements(defaultProgress, pathState.units);
-
-    res.render("units", {
-      pathState,
-      units: pathState.units.map((unit) => ({
-        ...unit,
-        achievement: getAchievementForUnit(unit.id, achievements)
-      }))
-    });
-  });
+  res.redirect(301, "/");
 });
 
 app.get("/writing", (req, res) => {

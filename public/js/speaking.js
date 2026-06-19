@@ -1,4 +1,6 @@
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const requestedSpeakingUnitId = Number(new URLSearchParams(window.location.search).get("unit"));
+const speakingUnitId = requestedSpeakingUnitId > 0 ? requestedSpeakingUnitId : 5;
 
 const speakingScenario = document.getElementById("speakingScenario").textContent.trim();
 const targetPhrase = document.getElementById("targetPhrase").textContent.trim();
@@ -199,7 +201,7 @@ async function saveSpeakingProgress() {
         xpEarned: 20,
         correctAnswers: lastScore >= 60 ? 1 : 0,
         wrongAnswers: lastScore >= 60 ? 0 : 1,
-        unitId: 5
+        unitId: speakingUnitId
       })
     });
 

@@ -6,6 +6,8 @@ const sendConversationBtn = document.getElementById("sendConversationBtn");
 const conversationForm = document.getElementById("conversationForm");
 const conversationResult = document.getElementById("conversationResult");
 const conversationResultContent = document.getElementById("conversationResultContent");
+const requestedConversationUnitId = Number(new URLSearchParams(window.location.search).get("unit"));
+const conversationUnitId = requestedConversationUnitId > 0 ? requestedConversationUnitId : 4;
 
 const maxUserReplies = 4;
 const conversationXp = 15;
@@ -203,7 +205,7 @@ async function saveConversationProgress() {
         xpEarned: conversationXp,
         correctAnswers: 1,
         wrongAnswers: 0,
-        unitId: 4
+        unitId: conversationUnitId
       })
     });
 
@@ -251,7 +253,7 @@ function renderConversationComplete(feedback, progress) {
 
       ${renderStructuredFeedback(feedback)}
 
-      <a href="/units" class="primary-link continue-mission-link">Continue</a>
+      <a href="/" class="primary-link continue-mission-link">Continue</a>
       <button type="button" class="secondary-btn" id="restartConversationBtn">Start Again</button>
     </div>
   `;

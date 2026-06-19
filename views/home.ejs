@@ -6,143 +6,136 @@
   <title>English Coach Local</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
-  <main class="container">
-    <section class="hero hero-with-mascot">
-      <div>
-        <p class="mascot-kicker">Mini Beagle Coach</p>
-        <h1>English Coach Local</h1>
-        <p>Practice English for customer support, conversations, and professional messages.</p>
-      </div>
-      <img
-        src="/images/mini-beagle-mascot.png"
-        alt="Mini beagle mascot"
-        class="mascot-img"
-      />
-    </section>
+<body class="coach-page">
+  <div class="coach-layout">
+    <aside class="coach-nav">
+      <a href="/" class="coach-logo">
+        <img src="/images/mini-beagle-mascot.png" alt="" />
+        <span>English<br />Coach</span>
+      </a>
 
-    <section class="stats">
-      <div class="stat-card">
-        <span class="icon">F</span>
-        <h2><%= progress.streak_days %></h2>
-        <p>day streak</p>
-      </div>
+      <nav aria-label="Main navigation">
+        <a href="/" class="active"><span>1</span>Learn</a>
+        <a href="/review"><span>R</span>Review</a>
+        <a href="/writing"><span>W</span>Writing</a>
+        <a href="/conversation"><span>C</span>Conversation</a>
+        <a href="/history"><span>H</span>History</a>
+      </nav>
+    </aside>
 
-      <div class="stat-card">
-        <span class="icon">XP</span>
-        <h2><%= progress.total_xp %></h2>
-        <p>Total XP</p>
-      </div>
+    <main class="coach-main">
+      <header class="coach-mobile-header">
+        <div><span>F</span><strong><%= progress.streak_days %></strong><small>streak</small></div>
+        <div><span>XP</span><strong><%= progress.total_xp %></strong><small>earned</small></div>
+        <div><span>A</span><strong><%= progress.lessons_completed %></strong><small>activities</small></div>
+      </header>
 
-      <div class="stat-card">
-        <span class="icon">A</span>
-        <h2><%= progress.lessons_completed %></h2>
-        <p>Activities completed</p>
-      </div>
-    </section>
-
-    <section class="path-preview">
-      <div>
-        <p class="unit-label">Your next step</p>
-        <h2><%= pathState.nextUnit ? pathState.nextUnit.title : 'Customer Support English Path' %></h2>
-        <p>
-          <%= pathState.nextUnit ? pathState.nextUnit.description : 'All available units are complete. Practice again to keep your support English sharp.' %>
-        </p>
-
-        <div class="path-progress" aria-label="Learning path progress">
-          <div class="path-progress-label">
-            <span><%= pathState.completedCount %>/<%= pathState.totalCount %> units completed</span>
-            <span><%= pathState.progressPercent %>%</span>
-          </div>
-          <div class="path-progress-track">
-            <div style="width: <%= pathState.progressPercent %>%"></div>
-          </div>
+      <section class="coach-unit-banner">
+        <div>
+          <p>Phase <%= pathState.currentSection ? pathState.currentSection.id : 1 %> of 4</p>
+          <h1><%= pathState.currentSection ? pathState.currentSection.title : 'Professional Support English' %></h1>
+          <span><%= pathState.completedCount %> of <%= pathState.totalCount %> units completed</span>
         </div>
-      </div>
-      <div class="path-preview-actions">
-        <% if (pathState.nextUnit && pathState.nextUnit.href) { %>
-          <a href="<%= pathState.nextUnit.href %>" class="primary-link">Start Next Step</a>
-        <% } %>
-        <a href="/units" class="secondary-link">Continue Learning</a>
-      </div>
-    </section>
+        <a href="/review">Quick review</a>
+      </section>
 
-    <section class="achievements-section">
-      <div class="section-heading">
-        <p class="unit-label">Achievements</p>
-        <h2>Your badges</h2>
-      </div>
+      <section class="coach-path" aria-label="Learning path">
+        <div class="coach-path-title">
+          <span></span>
+          <p>Build confidence one step at a time</p>
+          <span></span>
+        </div>
 
-      <div class="achievement-grid">
-        <% achievements.forEach((achievement) => { %>
-          <article class="achievement-card <%= achievement.unlocked ? 'unlocked' : 'locked' %>">
-            <span><%= achievement.unlocked ? '✓' : achievement.requirement %></span>
-            <div>
-              <h3><%= achievement.title %></h3>
-              <p><%= achievement.description %></p>
+        <% pathState.units.forEach((unit, index) => { %>
+          <% if (index === 0 || pathState.units[index - 1].sectionId !== unit.sectionId) { %>
+            <div class="coach-phase-divider">
+              <span>Phase <%= unit.sectionId %></span>
+              <strong><%= unit.sectionTitle %></strong>
+              <small><%= unit.sectionDescription %></small>
             </div>
-          </article>
+          <% } %>
+          <div
+            class="coach-step step-<%= ['left', 'center', 'right'][index % 3] %> <%= unit.isCompleted ? 'completed' : '' %> <%= unit.isLocked ? 'locked' : 'available' %>"
+            <% if (!unit.isLocked && unit.href) { %>role="button" tabindex="0"<% } %>
+          >
+            <span class="coach-step-node">
+              <%= unit.isCompleted ? '✓' : unit.isLocked ? 'L' : unit.unit_order %>
+            </span>
+            <strong><%= unit.title %></strong>
+            <small>
+              <%= unit.isCompleted ? 'Practice again' : unit.isLocked ? 'Complete the previous step' : 'Start this step' %>
+            </small>
+            <% if (!unit.isLocked && unit.href) { %>
+              <span class="coach-step-detail" aria-hidden="true">
+                <b><%= unit.title %></b>
+                <em><%= unit.description %></em>
+                <a href="<%= unit.href %>"><%= unit.isCompleted ? 'Practice again +5 XP' : 'Start lesson +10 XP' %></a>
+              </span>
+            <% } %>
+          </div>
+
+          <% if (index === 1) { %>
+            <img
+              src="/images/mini-beagle-mascot.png"
+              alt="Mini beagle coach"
+              class="coach-path-mascot"
+            />
+          <% } %>
         <% }) %>
-      </div>
-    </section>
 
-    <section class="menu">
-      <a href="/units" class="menu-card blue">
-        <span>1</span>
-        <div>
-          <h3>Learning Path</h3>
-          <p>Follow your Duolingo-style journey</p>
-        </div>
-      </a>
+        <a href="/review" class="coach-review-node">
+          <span>R</span>
+          <strong>Daily Review</strong>
+          <small>Visual, listening, and speaking cards</small>
+        </a>
+      </section>
+    </main>
 
-      <a href="/lesson" class="menu-card blue">
-        <span>L</span>
-        <div>
-          <h3>Daily Lesson</h3>
-          <p>Learn useful professional phrases</p>
-        </div>
-      </a>
+    <aside class="coach-progress-panel">
+      <section class="coach-top-stats" aria-label="Your progress">
+        <div><strong><%= progress.streak_days %></strong><span>day streak</span></div>
+        <div><strong><%= progress.total_xp %></strong><span>total XP</span></div>
+      </section>
 
-      <a href="/review" class="menu-card teal">
-        <span>R</span>
-        <div>
-          <h3>Daily Review</h3>
-          <p>Review with visual, listening, and speaking cards</p>
-        </div>
-      </a>
+      <section class="coach-side-card coach-daily-card">
+        <p class="coach-side-label">Today's goal</p>
+        <h2>Keep the momentum</h2>
+        <p>Complete one short activity today.</p>
+        <div class="coach-goal-track"><span style="width: <%= progress.lessons_completed > 0 ? 100 : 0 %>%"></span></div>
+        <a href="/lesson">Practice now</a>
+      </section>
 
-      <a href="/writing" class="menu-card green">
-        <span>W</span>
-        <div>
-          <h3>Writing Missions</h3>
-          <p>Practice professional messages and emails.</p>
+      <% const unlockedAchievements = achievements.filter((achievement) => achievement.unlocked); %>
+      <section class="coach-side-card">
+        <div class="coach-side-heading">
+          <div>
+            <p class="coach-side-label">Achievements</p>
+            <h2>Your badges</h2>
+          </div>
+          <strong><%= unlockedAchievements.length %>/<%= achievements.length %></strong>
         </div>
-      </a>
+        <div class="coach-side-badges">
+          <% unlockedAchievements.slice(0, 3).forEach((achievement) => { %>
+            <span><b>✓</b><%= achievement.title %></span>
+          <% }) %>
+        </div>
+      </section>
 
-      <a href="/correct" class="menu-card purple">
-        <span>C</span>
-        <div>
-          <h3>Correct My English</h3>
-          <p>Get AI feedback on your writing</p>
-        </div>
-      </a>
+      <section class="coach-side-card coach-tools-card">
+        <p class="coach-side-label">Quick practice</p>
+        <a href="/speaking"><span>S</span><div><strong>Speaking</strong><small>Pronunciation practice</small></div></a>
+        <a href="/correct"><span>C</span><div><strong>Correct my English</strong><small>Get AI feedback</small></div></a>
+      </section>
+    </aside>
+  </div>
 
-      <a href="/conversation" class="menu-card yellow">
-        <span>V</span>
-        <div>
-          <h3>Customer Conversation</h3>
-          <p>Practice live support replies</p>
-        </div>
-      </a>
-
-      <a href="/history" class="menu-card teal">
-        <span>H</span>
-        <div>
-          <h3>History</h3>
-          <p>Review your previous corrections</p>
-        </div>
-      </a>
-    </section>
-  </main>
+  <nav class="coach-bottom-nav" aria-label="Mobile navigation">
+    <a href="/" class="active"><span>1</span>Learn</a>
+    <a href="/review"><span>R</span>Review</a>
+    <a href="/writing"><span>W</span>Write</a>
+    <a href="/conversation"><span>C</span>Talk</a>
+    <a href="/history"><span>H</span>History</a>
+  </nav>
+  <script src="/js/home.js"></script>
 </body>
 </html>

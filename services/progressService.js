@@ -8,7 +8,7 @@ function saveProgress({ xpEarned, correctAnswers, wrongAnswers, unitId }) {
   const activitiesToAdd = 1;
   const today = new Date().toISOString().split("T")[0];
 
-  return new Promise((resolve, reject) => {
+  return validateUnitAccess(completedUnitId).then(() => new Promise((resolve, reject) => {
     db.get("SELECT * FROM user_progress WHERE id = 1", [], (selectError, row) => {
       if (selectError) {
         console.error("Error reading user progress:", selectError.message);
@@ -62,6 +62,59 @@ function saveProgress({ xpEarned, correctAnswers, wrongAnswers, unitId }) {
         }
       );
     });
+  }));
+}
+
+function validateUnitAccess(completedUnitId) {
+  if (!completedUnitId) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    db.get(
+      `
+      SELECT
+        current_unit.id,
+        NOT EXISTS (
+          SELECT 1
+          FROM learning_units AS previous_unit
+          WHERE previous_unit.unit_order < current_unit.unit_order
+            AND NOT EXISTS (
+              SELECT 1
+              FROM user_unit_progress
+              WHERE user_id = 1
+                AND unit_id = previous_unit.id
+                AND status = 'completed'
+            )
+        ) AS prerequisites_completed
+      FROM learning_units AS current_unit
+      WHERE current_unit.id = ?
+      `,
+      [completedUnitId],
+      (error, row) => {
+        if (error) {
+          console.error("Error validating unit access:", error.message);
+          reject(new Error("Error validating learning path."));
+          return;
+        }
+
+        if (!row) {
+          const invalidUnitError = new Error("Learning path unit not found.");
+          invalidUnitError.statusCode = 400;
+          reject(invalidUnitError);
+          return;
+        }
+
+        if (!row.prerequisites_completed) {
+          const lockedUnitError = new Error("Complete the previous learning path steps first.");
+          lockedUnitError.statusCode = 409;
+          reject(lockedUnitError);
+          return;
+        }
+
+        resolve();
+      }
+    );
   });
 }
 
@@ -124,5 +177,6 @@ function saveUnitProgress(completedUnitId, callback) {
 
 module.exports = {
   saveProgress,
-  calculateStreak
+  calculateStreak,
+  validateUnitAccess
 };

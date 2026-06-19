@@ -144,7 +144,7 @@ router.post("/save-lesson-progress", async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       error: error.message
     });
   }

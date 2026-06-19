@@ -3,6 +3,8 @@ const textInput = document.getElementById("text");
 const correctForm = document.getElementById("correctForm");
 const resultSection = document.getElementById("result");
 const resultContent = document.getElementById("resultContent");
+const requestedCorrectionUnitId = Number(new URLSearchParams(window.location.search).get("unit"));
+const correctionUnitId = requestedCorrectionUnitId > 0 ? requestedCorrectionUnitId : 3;
 
 const correctionXp = 5;
 const correctionDraftKey = "englishCoach.correction.draft";
@@ -95,7 +97,7 @@ async function saveCorrectionProgress() {
         xpEarned: correctionXp,
         correctAnswers: 1,
         wrongAnswers: 0,
-        unitId: 3
+        unitId: correctionUnitId
       })
     });
 
@@ -142,7 +144,7 @@ function renderCorrectionComplete(feedback, progress) {
 
       ${renderStructuredFeedback(feedback)}
 
-      <a href="/units" class="primary-link continue-mission-link">Continue</a>
+      <a href="/" class="primary-link continue-mission-link">Continue</a>
       <button type="button" class="secondary-btn" id="startCorrectionAgainBtn">Start Again</button>
     </div>
   `;

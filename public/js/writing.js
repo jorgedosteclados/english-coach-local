@@ -3,11 +3,13 @@ const writingText = document.getElementById("writingText");
 const writingForm = document.getElementById("writingForm");
 const writingResult = document.getElementById("writingResult");
 const writingResultContent = document.getElementById("writingResultContent");
+const requestedWritingUnitId = Number(new URLSearchParams(window.location.search).get("unit"));
 
 const missionId = Number(writingForm.dataset.missionId) || null;
-const missionUnitId = Number(writingForm.dataset.unitId) || 2;
+const missionUnitId =
+  requestedWritingUnitId > 0 ? requestedWritingUnitId : Number(writingForm.dataset.unitId) || 2;
 const missionXp = Number(writingForm.dataset.xpReward) || 10;
-const writingDraftKey = `englishCoach.writingMission.${missionId || "default"}.draft`;
+const writingDraftKey = `englishCoach.writingMission.${missionUnitId}.${missionId || "default"}.draft`;
 
 let missionCompleted = false;
 let missionSaveInProgress = false;
@@ -149,7 +151,7 @@ function renderMissionComplete(feedback, progress) {
 
       ${renderStructuredFeedback(feedback)}
 
-      <a href="/units" class="primary-link continue-mission-link">Continue</a>
+      <a href="/" class="primary-link continue-mission-link">Continue</a>
       <button type="button" class="secondary-btn" id="startWritingAgainBtn">Start Again</button>
     </div>
   `;

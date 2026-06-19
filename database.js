@@ -1,5 +1,6 @@
 const sqlite3 = require("sqlite3").verbose();
 const seedLessonQuestions = require("./data/seedLessonQuestions");
+const { learningPathUnits } = require("./data/learningPath");
 
 const db = new sqlite3.Database("./english_coach.db", (err) => {
   if (err) {
@@ -138,36 +139,36 @@ db.run(`
   )
 `);
 
-db.run(
-  `
-  INSERT OR IGNORE INTO learning_units
+const learningPathStatement = db.prepare(`
+  INSERT INTO learning_units
     (id, title, description, unit_order, activity_type, href, is_locked_default)
-  VALUES
-    (1, 'Support Basics', 'Practice useful phrases for everyday customer support.', 1, 'lesson', '/lesson', 0),
-    (2, 'Ask for Details', 'Write clear messages asking coworkers or customers for more information.', 2, 'writing', '/writing', 0),
-    (3, 'Correct and Improve', 'Send your own sentence and get AI feedback for more natural English.', 3, 'correction', '/correct', 0),
-    (4, 'Customer Conversation', 'Simulate a real conversation with a customer and practice responses.', 4, 'conversation', NULL, 1),
-    (5, 'Speaking Practice', 'Practice pronunciation, fluency, and confidence for live calls.', 5, 'speaking', NULL, 1)
-  `
-);
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(id) DO UPDATE SET
+    title = excluded.title,
+    description = excluded.description,
+    unit_order = excluded.unit_order,
+    activity_type = excluded.activity_type,
+    href = excluded.href,
+    is_locked_default = excluded.is_locked_default
+`);
 
-db.run(
-  `
-  UPDATE learning_units
-  SET href = '/conversation',
-      is_locked_default = 0
-  WHERE id = 4
-  `
-);
+learningPathUnits.forEach((pathUnit) => {
+  learningPathStatement.run([
+    pathUnit.id,
+    pathUnit.title,
+    pathUnit.description,
+    pathUnit.unitOrder,
+    pathUnit.activityType,
+    pathUnit.href,
+    pathUnit.isLockedDefault
+  ]);
+});
 
-db.run(
-  `
-  UPDATE learning_units
-  SET href = '/speaking',
-      is_locked_default = 0
-  WHERE id = 5
-  `
-);
+learningPathStatement.finalize((pathError) => {
+  if (pathError) {
+    console.error("Error seeding learning path:", pathError.message);
+  }
+});
 
 db.run(
   `

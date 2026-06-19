@@ -91,23 +91,36 @@ async function main() {
       const page = await newPage(browser);
       await page.goto(baseURL);
       await pause();
-      await expectVisibleText(page, "English Coach Local");
+      await expectVisibleText(page, "Support Foundations");
       await expectVisibleText(page, "Customer Conversation");
       await expectVisibleText(page, "Daily Review");
-      await expectVisibleText(page, "3/5 units completed");
-      await expectVisibleText(page, "First Step");
-      await expectVisibleText(page, "Lesson Starter");
-      await expectVisibleText(page, "3-Day Streak");
-      await expectVisibleText(page, "100 XP");
-      assert.equal(await page.getByRole("link", { name: "Start Next Step" }).getAttribute("href"), "/conversation");
-      await page.getByRole("link", { name: "Continue Learning" }).click();
-      await pause();
-      await page.waitForURL("**/units");
-      await expectVisibleText(page, "Learning Path");
-      await expectVisibleText(page, "Support Basics");
-      await expectVisibleText(page, "3/5 units completed");
-      await expectVisibleText(page, "Next: Customer Conversation");
-      await expectVisibleText(page, "Badge earned");
+      await expectVisibleText(page, "3 of 20 units completed");
+      await expectVisibleText(page, "Your badges");
+      const conversationStep = page.getByRole("button", { name: /Customer Conversation/ });
+      await conversationStep.click();
+      const practiceLink = conversationStep.getByRole("link", { name: "Start lesson +10 XP" });
+      await practiceLink.waitFor({ state: "visible" });
+      assert.equal(await practiceLink.getAttribute("href"), "/conversation?unit=4");
+      await expectVisibleText(page, "Ticket Mastery");
+      assert.equal(await page.getByRole("link", { name: "Quick review" }).getAttribute("href"), "/review");
+
+      const lockedSaveResponse = await page.request.post(`${baseURL}/ai/save-lesson-progress`, {
+        data: {
+          xpEarned: 10,
+          correctAnswers: 1,
+          wrongAnswers: 0,
+          unitId: 6
+        }
+      });
+      assert.equal(lockedSaveResponse.status(), 409);
+      assert.equal(
+        (await lockedSaveResponse.json()).error,
+        "Complete the previous learning path steps first."
+      );
+
+      await page.goto(`${baseURL}/units`);
+      await page.waitForURL(`${baseURL}/`);
+      await expectVisibleText(page, "Support Foundations");
       await pause();
       await page.close();
     });
@@ -141,7 +154,7 @@ async function main() {
           xpEarned: 50,
           correctAnswers: 5,
           wrongAnswers: 0,
-          unitId: 1
+          unitId: 6
         });
 
         await route.fulfill({
@@ -151,38 +164,64 @@ async function main() {
             correctAdded: 5,
             wrongAdded: 0,
             streakDays: 3,
-            unitProgress: { unitId: 1, status: "completed" }
+            unitProgress: { unitId: 6, status: "completed" }
           }
         });
       });
 
-      await page.goto(`${baseURL}/lesson`);
+      await page.goto(`${baseURL}/lesson?unit=6&category=request-info`);
       await pause();
       await expectVisibleText(page, "Practice focus");
       const categorySelected = await page.evaluate(() => {
         const select = document.getElementById("lessonCategory");
-
-        if (!select) {
-          return false;
-        }
-
-        select.value = "request-info";
-        select.dispatchEvent(new Event("change", { bubbles: true }));
-        return true;
+        return select?.value === "request-info";
       });
 
       assert.equal(categorySelected, true);
       await pause();
 
-      for (const question of mockQuestions) {
-        await expectVisibleText(page, question.questionPt);
+      for (const [questionIndex, question] of mockQuestions.entries()) {
+        if (questionIndex === 0 || questionIndex === 4) {
+          await expectVisibleText(page, question.questionPt);
+        } else if (questionIndex === 1) {
+          await expectVisibleText(page, "Listen and build the phrase");
+          await page.getByRole("button", { name: "Play phrase", exact: true }).waitFor();
+        } else if (questionIndex === 2) {
+          await expectVisibleText(page, "Listen and type what you hear");
+          await page.getByRole("button", { name: "Play phrase slowly" }).waitFor();
+        } else {
+          await expectVisibleText(page, "Speak this phrase");
+          await expectVisibleText(page, question.correctAnswer);
+        }
         await pause();
-        await page.getByRole("button", { name: question.correctAnswer }).click();
+
+        if (questionIndex === 0 || questionIndex === 4) {
+          await page.getByRole("button", { name: question.correctAnswer }).click();
+        } else if (questionIndex === 1) {
+          await page.evaluate((answer) => {
+            answer.split(/\s+/).forEach((word) => {
+              const token = [...document.querySelectorAll("#wordBank .word-token")].find(
+                (button) => button.textContent === word
+              );
+
+              if (!token) {
+                throw new Error(`Word token not found: ${word}`);
+              }
+
+              token.click();
+            });
+          }, question.correctAnswer);
+        } else if (questionIndex === 2) {
+          await page.locator("#lessonTypedAnswer").fill(question.correctAnswer);
+        } else {
+          await page.locator("#lessonSpokenAnswer").fill(question.correctAnswer);
+        }
+
         await pause();
-        await page.getByRole("button", { name: "Confirm Answer" }).click();
+        await page.getByRole("button", { name: "Check answer" }).click();
         await expectVisibleText(page, "Correct! +10 XP.");
         await pause();
-        await page.getByRole("button", { name: "Next Question" }).click();
+        await page.getByRole("button", { name: "Continue" }).click();
       }
 
       await expectVisibleText(page, "Lesson complete!");
@@ -227,7 +266,7 @@ async function main() {
       await page.getByRole("button", { name: "Check My Writing" }).click();
       await expectVisibleText(page, "Mission complete!");
       await expectVisibleText(page, "Could you please share more details?");
-      assert.equal(await page.getByRole("link", { name: "Continue" }).getAttribute("href"), "/units");
+      assert.equal(await page.getByRole("link", { name: "Continue" }).getAttribute("href"), "/");
       await pause();
       await page.close();
     });

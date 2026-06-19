@@ -3,52 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Lesson</title>
+  <title>Support English Lesson</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/" class="back-link">← Back to Home</a>
+<body class="lesson-page">
+  <main class="lesson-shell">
+    <header class="lesson-topbar">
+      <a href="/" class="lesson-close" aria-label="Back to learning path">×</a>
+      <div class="lesson-progress-wrap">
+        <div class="lesson-progress-track"><span id="lessonProgressBar"></span></div>
+        <p class="lesson-progress">Question 1 of 5</p>
+      </div>
+      <div class="lesson-xp"><strong id="lessonXpValue">0</strong><span>XP</span></div>
+    </header>
 
-    <section class="hero hero-with-mascot compact-mascot">
+    <section class="lesson-heading">
       <div>
-        <p class="mascot-kicker">Mini Beagle Coach</p>
-        <h1>Lesson 1</h1>
-        <p>Basic Support English</p>
+        <p>Support Basics</p>
+        <h1>Choose the best response</h1>
       </div>
-      <img
-        src="/images/mini-beagle-mascot.png"
-        alt="Mini beagle mascot"
-        class="mascot-img"
-      />
+      <label class="lesson-category-control" for="lessonCategory">
+        <span>Practice focus</span>
+        <select id="lessonCategory">
+          <% lessonCategories.forEach((category) => { %>
+            <option value="<%= category.id %>"><%= category.label %></option>
+          <% }) %>
+        </select>
+      </label>
     </section>
 
-    <section class="lesson-category-card">
-      <label for="lessonCategory">Practice focus</label>
-      <select id="lessonCategory">
-        <% lessonCategories.forEach((category) => { %>
-          <option value="<%= category.id %>"><%= category.label %></option>
-        <% }) %>
-      </select>
-    </section>
-
-    <section class="card">
-      <p class="lesson-progress">Question 1 of 5</p>
-
-      <h2 id="lessonTitle">How do you say:</h2>
-      <p class="question-text">Eu vou verificar internamente.</p>
-
-      <div class="options">
-        <button class="option-btn" data-correct="true">I will check internally.</button>
-        <button class="option-btn">I will see inside.</button>
-        <button class="option-btn">I go verify internal.</button>
-        <button class="option-btn">I checking internal.</button>
+    <section class="lesson-exercise">
+      <div class="lesson-score-row">
+        <div id="scoreDisplay" class="score-display"></div>
       </div>
 
-      <div id="lessonFeedback" class="feedback-box hidden"></div>
+      <div class="lesson-prompt">
+        <span id="lessonTitle">How do you say:</span>
+        <p class="question-text">Loading your first question...</p>
+      </div>
 
-      <button id="nextQuestionBtn" class="hidden">Next Question</button>
-      <button id="restartLessonBtn" class="hidden">Start Again</button>
+      <div class="options" aria-label="Answer options"></div>
+
+      <div id="lessonFeedback" class="feedback-box hidden" role="status"></div>
+
+      <div class="lesson-actions">
+        <button id="confirmAnswerBtn" class="hidden">Check answer</button>
+        <button id="nextQuestionBtn" class="hidden">Continue</button>
+        <button id="continueHomeBtn" class="continue-home-btn hidden">Back to learning path</button>
+        <button id="restartLessonBtn" class="secondary-btn hidden">Practice again</button>
+      </div>
     </section>
   </main>
 

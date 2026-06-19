@@ -38,6 +38,26 @@ const lessonCategories = [
     id: "email",
     label: "Email phrases",
     source: "csv:email"
+  },
+  {
+    id: "impact",
+    label: "Explain impact",
+    source: "csv:impact"
+  },
+  {
+    id: "phrases",
+    label: "Useful support phrases",
+    source: "csv:phrases"
+  },
+  {
+    id: "routing",
+    label: "Case routing",
+    source: "csv:routing"
+  },
+  {
+    id: "scope",
+    label: "Clarify scope",
+    source: "csv:scope"
   }
 ];
 

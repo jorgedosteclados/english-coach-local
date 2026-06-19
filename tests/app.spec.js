@@ -67,14 +67,13 @@ test.beforeEach(async ({ page }) => {
 test("home and learning path render the main navigation", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "English Coach Local" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Continue Learning" })).toBeVisible();
+  await expect(page.getByText(/Phase \d of 4/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Support Basics/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Quick review" })).toHaveAttribute("href", "/review");
 
-  await page.getByRole("link", { name: "Continue Learning" }).click();
-
-  await expect(page).toHaveURL(/\/units$/);
-  await expect(page.getByRole("heading", { name: "Learning Path" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Support Basics" })).toBeVisible();
+  await page.goto("/units");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText(/Phase \d of 4/)).toBeVisible();
 });
 
 test("lesson can be completed from question to saved progress", async ({ page }) => {
@@ -110,12 +109,34 @@ test("lesson can be completed from question to saved progress", async ({ page })
 
   await page.goto("/lesson");
 
-  for (const question of mockQuestions) {
-    await expect(page.getByText(question.questionPt)).toBeVisible();
-    await page.getByRole("button", { name: question.correctAnswer }).click();
-    await page.getByRole("button", { name: "Confirm Answer" }).click();
+  for (const [questionIndex, question] of mockQuestions.entries()) {
+    if (questionIndex === 0 || questionIndex === 4) {
+      await expect(page.getByText(question.questionPt)).toBeVisible();
+      await page.getByRole("button", { name: question.correctAnswer }).click();
+    } else if (questionIndex === 1) {
+      await expect(page.getByText("Listen and build the phrase")).toBeVisible();
+      await page.evaluate((answer) => {
+        answer.split(/\s+/).forEach((word) => {
+          const token = [...document.querySelectorAll("#wordBank .word-token")].find(
+            (button) => button.textContent === word
+          );
+
+          if (!token) {
+            throw new Error(`Word token not found: ${word}`);
+          }
+
+          token.click();
+        });
+      }, question.correctAnswer);
+    } else if (questionIndex === 2) {
+      await page.locator("#lessonTypedAnswer").fill(question.correctAnswer);
+    } else {
+      await page.locator("#lessonSpokenAnswer").fill(question.correctAnswer);
+    }
+
+    await page.getByRole("button", { name: "Check answer" }).click();
     await expect(page.getByText(/Correct! \+10 XP/)).toBeVisible();
-    await page.getByRole("button", { name: "Next Question" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
   }
 
   await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
@@ -154,7 +175,7 @@ test("writing mission submits text and shows feedback completion", async ({ page
 
   await expect(page.getByRole("heading", { name: "Mission complete!" })).toBeVisible();
   await expect(page.getByText("Could you please share more details?")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Continue" })).toHaveAttribute("href", "/units");
+  await expect(page.getByRole("link", { name: "Continue" })).toHaveAttribute("href", "/");
 });
 
 test("correction page validates empty input and shows AI feedback", async ({ page }) => {
