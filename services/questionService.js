@@ -24,7 +24,9 @@ function getFallbackQuestion(categoryId) {
 
 function loadSavedQuestion(categoryId) {
   const category = getLessonCategory(categoryId);
-  const whereClause = category.source ? "WHERE source = ?" : "";
+  const whereClause = category.source
+    ? "WHERE source = ? AND times_used = 0"
+    : "WHERE times_used = 0";
   const params = category.source ? [category.source] : [];
 
   return new Promise((resolve) => {
@@ -33,7 +35,7 @@ function loadSavedQuestion(categoryId) {
       SELECT *
       FROM lesson_questions
       ${whereClause}
-      ORDER BY times_used ASC, RANDOM()
+      ORDER BY RANDOM()
       LIMIT 1
       `,
       params,
@@ -87,8 +89,8 @@ function saveAIQuestion(question, category) {
     db.run(
       `
       INSERT INTO lesson_questions
-        (question_pt, options_json, correct_answer, explanation_pt, source)
-      VALUES (?, ?, ?, ?, ?)
+        (question_pt, options_json, correct_answer, explanation_pt, source, times_used)
+      VALUES (?, ?, ?, ?, ?, 1)
       `,
       [
         question.questionPt,
