@@ -514,14 +514,24 @@ async function main() {
       await expectVisibleText(page, "Speaking Practice");
       await expectVisibleText(page, "Say this aloud");
       await expectVisibleText(page, "coordinate with the relevant team");
-      await page.getByRole("button", { name: "Show Better Version" }).click();
+      await page.getByRole("button", { name: "Listen to phrase" }).waitFor();
+      await page.getByRole("button", { name: "Listen slowly" }).waitFor();
+      await page.getByText("See a more natural version").click();
       await expectVisibleText(page, "More natural version");
+
+      const reorderedScore = await page.evaluate(() =>
+        calculateScore("please try another browser", "browser another try please")
+      );
+      assert.ok(reorderedScore < 100);
 
       await page.evaluate(() => {
         renderFeedback(document.getElementById("targetPhrase").textContent);
       });
 
-      await expectVisibleText(page, "Match score: 100%");
+      await expectVisibleText(page, "100%");
+      await expectVisibleText(page, "word match");
+      await expectVisibleText(page, "Target comparison");
+      await page.getByText("View detailed AI feedback").click();
       await expectVisibleText(page, "AI Feedback");
       await expectVisibleText(page, "I will keep you updated.");
       await page.getByRole("button", { name: "I Practiced This" }).click();

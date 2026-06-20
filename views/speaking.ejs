@@ -30,6 +30,10 @@
       <div class="speaking-target">
         <span>Say this aloud</span>
         <p id="targetPhrase"><%= prompt.targetPhrase %></p>
+        <div class="speaking-reference-actions">
+          <button id="listenTargetBtn" type="button" aria-label="Listen to phrase">Listen</button>
+          <button id="listenSlowBtn" type="button" class="secondary-btn" aria-label="Listen slowly">Slow</button>
+        </div>
       </div>
 
       <div class="speaking-controls">
@@ -46,12 +50,14 @@
 
       <div id="speakingFeedback" class="feedback-box hidden"></div>
 
-      <button id="showBetterPhraseBtn" type="button" class="secondary-btn">Show Better Version</button>
-      <div id="betterPhrase" class="speaking-better hidden">
-        <span>More natural version</span>
-        <p><%= prompt.betterVersion %></p>
-        <small><%= prompt.tipPt %></small>
-      </div>
+      <details class="speaking-reference-details">
+        <summary>See a more natural version</summary>
+        <div class="speaking-better">
+          <span>More natural version</span>
+          <p><%= prompt.betterVersion %></p>
+          <small><%= prompt.tipPt %></small>
+        </div>
+      </details>
 
       <button id="completeSpeakingBtn" type="button" class="continue-home-btn hidden">I Practiced This</button>
     </section>

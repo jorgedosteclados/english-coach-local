@@ -6,12 +6,12 @@ const speakingScenario = document.getElementById("speakingScenario").textContent
 const targetPhrase = document.getElementById("targetPhrase").textContent.trim();
 const recordSpeechBtn = document.getElementById("recordSpeechBtn");
 const tryAgainSpeechBtn = document.getElementById("tryAgainSpeechBtn");
-const showBetterPhraseBtn = document.getElementById("showBetterPhraseBtn");
+const listenTargetBtn = document.getElementById("listenTargetBtn");
+const listenSlowBtn = document.getElementById("listenSlowBtn");
 const completeSpeakingBtn = document.getElementById("completeSpeakingBtn");
 const speechSupportMessage = document.getElementById("speechSupportMessage");
 const speechTranscript = document.getElementById("speechTranscript");
 const speakingFeedback = document.getElementById("speakingFeedback");
-const betterPhrase = document.getElementById("betterPhrase");
 const speakingResult = document.getElementById("speakingResult");
 const speakingResultContent = document.getElementById("speakingResultContent");
 const speakingCard = document.getElementById("speakingCard");
@@ -32,15 +32,86 @@ function normalizeText(text) {
 }
 
 function calculateScore(expectedText, spokenText) {
+  return alignWords(expectedText, spokenText).score;
+}
+
+function alignWords(expectedText, spokenText) {
   const expectedWords = normalizeText(expectedText);
   const spokenWords = normalizeText(spokenText);
 
   if (expectedWords.length === 0 || spokenWords.length === 0) {
-    return 0;
+    return {
+      score: 0,
+      items: expectedWords.map((word) => ({ type: "missing", expected: word }))
+    };
   }
 
-  const matchedWords = expectedWords.filter((word) => spokenWords.includes(word));
-  return Math.round((matchedWords.length / expectedWords.length) * 100);
+  const matrix = Array.from({ length: expectedWords.length + 1 }, () =>
+    Array(spokenWords.length + 1).fill(0)
+  );
+
+  for (let expectedIndex = 0; expectedIndex <= expectedWords.length; expectedIndex++) {
+    matrix[expectedIndex][0] = expectedIndex;
+  }
+
+  for (let spokenIndex = 0; spokenIndex <= spokenWords.length; spokenIndex++) {
+    matrix[0][spokenIndex] = spokenIndex;
+  }
+
+  for (let expectedIndex = 1; expectedIndex <= expectedWords.length; expectedIndex++) {
+    for (let spokenIndex = 1; spokenIndex <= spokenWords.length; spokenIndex++) {
+      const substitutionCost =
+        expectedWords[expectedIndex - 1] === spokenWords[spokenIndex - 1] ? 0 : 1;
+      matrix[expectedIndex][spokenIndex] = Math.min(
+        matrix[expectedIndex - 1][spokenIndex] + 1,
+        matrix[expectedIndex][spokenIndex - 1] + 1,
+        matrix[expectedIndex - 1][spokenIndex - 1] + substitutionCost
+      );
+    }
+  }
+
+  const items = [];
+  let expectedIndex = expectedWords.length;
+  let spokenIndex = spokenWords.length;
+
+  while (expectedIndex > 0 || spokenIndex > 0) {
+    const expectedWord = expectedWords[expectedIndex - 1];
+    const spokenWord = spokenWords[spokenIndex - 1];
+
+    if (
+      expectedIndex > 0 &&
+      spokenIndex > 0 &&
+      expectedWord === spokenWord &&
+      matrix[expectedIndex][spokenIndex] === matrix[expectedIndex - 1][spokenIndex - 1]
+    ) {
+      items.push({ type: "match", expected: expectedWord, spoken: spokenWord });
+      expectedIndex--;
+      spokenIndex--;
+    } else if (
+      expectedIndex > 0 &&
+      spokenIndex > 0 &&
+      matrix[expectedIndex][spokenIndex] === matrix[expectedIndex - 1][spokenIndex - 1] + 1
+    ) {
+      items.push({ type: "different", expected: expectedWord, spoken: spokenWord });
+      expectedIndex--;
+      spokenIndex--;
+    } else if (
+      expectedIndex > 0 &&
+      matrix[expectedIndex][spokenIndex] === matrix[expectedIndex - 1][spokenIndex] + 1
+    ) {
+      items.push({ type: "missing", expected: expectedWord });
+      expectedIndex--;
+    } else {
+      items.push({ type: "extra", spoken: spokenWord });
+      spokenIndex--;
+    }
+  }
+
+  items.reverse();
+  const matches = items.filter((item) => item.type === "match").length;
+  const score = Math.round((matches / Math.max(expectedWords.length, spokenWords.length)) * 100);
+
+  return { score, items };
 }
 
 function showSupportMessage(message) {
@@ -53,33 +124,60 @@ function hideSupportMessage() {
 }
 
 function renderFeedback(transcript) {
-  lastScore = calculateScore(targetPhrase, transcript);
+  const alignment = alignWords(targetPhrase, transcript);
+  lastScore = alignment.score;
+  const summary =
+    lastScore >= 80
+      ? "Strong match. Your phrase is very close to the target."
+      : lastScore >= 50
+        ? "Good start. Review the highlighted words and try once more."
+        : "Try again in smaller chunks and use the slow reference audio.";
 
-  let message = `Match score: ${lastScore}%. `;
-
-  if (lastScore >= 80) {
-    message += "Great work. Your spoken phrase is very close to the target.";
-  } else if (lastScore >= 50) {
-    message += "Good start. Try again slowly and focus on the missing words.";
-  } else {
-    message += "Try once more. Read the sentence in small chunks and keep your pace steady.";
-  }
-
-  speakingFeedback.textContent = message;
+  speakingFeedback.innerHTML = `
+    <div class="speaking-feedback-summary">
+      <div class="speaking-score"><strong>${lastScore}%</strong><span>word match</span></div>
+      <div><h3>Recognition result</h3><p>${summary}</p></div>
+    </div>
+    <div class="speaking-word-review">
+      <span>Target comparison</span>
+      <div>${renderAlignedWords(alignment.items)}</div>
+    </div>
+    <p class="speaking-score-note">This score compares the speech-recognition transcript with the target phrase. It does not directly measure pronunciation.</p>
+    <details class="speaking-ai-details">
+      <summary>View detailed AI feedback</summary>
+      <div id="speakingAiDetails"><p class="ai-feedback-loading">Preparing feedback...</p></div>
+    </details>
+  `;
   speakingFeedback.classList.remove("hidden");
   completeSpeakingBtn.classList.remove("hidden");
   tryAgainSpeechBtn.classList.remove("hidden");
+  recordSpeechBtn.classList.add("hidden");
   loadAISpeakingFeedback(transcript);
+}
+
+function renderAlignedWords(items) {
+  return items
+    .map((item) => {
+      if (item.type === "match") {
+        return `<span class="word-match">${escapeHtml(item.expected)}</span>`;
+      }
+
+      if (item.type === "different") {
+        return `<span class="word-different" title="Recognized: ${escapeHtml(item.spoken)}">${escapeHtml(item.expected)}</span>`;
+      }
+
+      if (item.type === "missing") {
+        return `<span class="word-missing" title="Not recognized">${escapeHtml(item.expected)}</span>`;
+      }
+
+      return `<span class="word-extra" title="Extra recognized word">+${escapeHtml(item.spoken)}</span>`;
+    })
+    .join(" ");
 }
 
 async function loadAISpeakingFeedback(transcript) {
   const currentRequestId = feedbackRequestId + 1;
   feedbackRequestId = currentRequestId;
-
-  speakingFeedback.innerHTML = `
-    <p>${escapeHtml(speakingFeedback.textContent)}</p>
-    <p class="ai-feedback-loading">Preparing AI speaking feedback...</p>
-  `;
 
   try {
     const response = await fetch("/ai/speaking-feedback", {
@@ -105,10 +203,11 @@ async function loadAISpeakingFeedback(transcript) {
       throw new Error(data.error);
     }
 
-    speakingFeedback.innerHTML = `
-      <p>Match score: ${lastScore}%.</p>
-      ${renderStructuredFeedback(data.result)}
-    `;
+    const detailsContainer = document.getElementById("speakingAiDetails");
+
+    if (detailsContainer) {
+      detailsContainer.innerHTML = renderStructuredFeedback(data.result);
+    }
   } catch (error) {
     console.error(error);
 
@@ -116,10 +215,12 @@ async function loadAISpeakingFeedback(transcript) {
       return;
     }
 
-    speakingFeedback.innerHTML = `
-      <p>Match score: ${lastScore}%.</p>
-      <p class="ai-feedback-loading">AI speaking feedback is unavailable right now.</p>
-    `;
+    const detailsContainer = document.getElementById("speakingAiDetails");
+
+    if (detailsContainer) {
+      detailsContainer.innerHTML =
+        '<p class="ai-feedback-loading">Detailed AI feedback is unavailable right now.</p>';
+    }
   }
 }
 
@@ -127,6 +228,8 @@ function setListeningState(nextListeningState) {
   isListening = nextListeningState;
   recordSpeechBtn.textContent = isListening ? "Listening..." : "Start Speaking";
   recordSpeechBtn.disabled = isListening;
+  tryAgainSpeechBtn.textContent = isListening ? "Listening..." : "Try Again";
+  tryAgainSpeechBtn.disabled = isListening;
 }
 
 function startRecognition() {
@@ -136,6 +239,7 @@ function startRecognition() {
 
   hideSupportMessage();
   speakingFeedback.classList.add("hidden");
+  completeSpeakingBtn.classList.add("hidden");
   speechTranscript.textContent = "Listening...";
   setListeningState(true);
   recognition.start();
@@ -266,12 +370,22 @@ tryAgainSpeechBtn.addEventListener("click", () => {
   startRecognition();
 });
 
-showBetterPhraseBtn.addEventListener("click", () => {
-  betterPhrase.classList.toggle("hidden");
-  showBetterPhraseBtn.textContent = betterPhrase.classList.contains("hidden")
-    ? "Show Better Version"
-    : "Hide Better Version";
-});
+function speakTarget(rate) {
+  if (!window.speechSynthesis) {
+    showSupportMessage("Reference audio is not available in this browser.");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(targetPhrase);
+  utterance.lang = "en-US";
+  utterance.rate = rate;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+}
+
+listenTargetBtn.addEventListener("click", () => speakTarget(0.88));
+listenSlowBtn.addEventListener("click", () => speakTarget(0.58));
 
 completeSpeakingBtn.addEventListener("click", () => {
   saveSpeakingProgress();

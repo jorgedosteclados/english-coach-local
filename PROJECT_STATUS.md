@@ -188,3 +188,7 @@ speaking, adaptive review, daily review, and history.
 - Expanded the main E2E suite to 9 flows, including real adaptive scheduling.
 - Fixed speaking completion to replace the practice form with result actions for
   continuing the path or practicing again.
+- Added normal and slow reference audio to speaking practice.
+- Replaced unordered speaking scoring with sequential word alignment and visible
+  match, missing, different, and extra-word states.
+- Collapsed detailed AI speaking feedback behind an optional disclosure.
