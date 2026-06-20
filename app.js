@@ -11,9 +11,19 @@ const { lessonCategories } = require("./data/lessonCategories");
 const speakingPrompts = require("./data/speakingPrompts");
 const visualReviewCards = require("./data/visualReviewCards");
 const { learningPathUnits } = require("./data/learningPath");
+const {
+  getWritingMission,
+  getConversationContent,
+  getSpeakingPrompts
+} = require("./data/unitContent");
 const PORT = 3000;
 
 const learningPathMetadata = new Map(learningPathUnits.map((unit) => [unit.id, unit]));
+
+function getRequestedUnitId(req, fallbackUnitId) {
+  const requestedUnitId = Number(req.query.unit);
+  return requestedUnitId > 0 ? requestedUnitId : fallbackUnitId;
+}
 
 const defaultProgress = {
   total_xp: 0,
@@ -129,7 +139,11 @@ app.get("/correct", (req, res) => {
 });
 
 app.get("/lesson", (req, res) => {
-  res.render("lesson", { lessonCategories });
+  const unit = learningPathMetadata.get(getRequestedUnitId(req, 1));
+  res.render("lesson", {
+    lessonCategories,
+    lessonName: unit?.title || "Support Basics"
+  });
 });
 
 app.get("/review", (req, res) => {
@@ -141,6 +155,13 @@ app.get("/units", (req, res) => {
 });
 
 app.get("/writing", (req, res) => {
+  const requestedMission = getWritingMission(getRequestedUnitId(req, 2));
+
+  if (requestedMission) {
+    res.render("writing", { mission: requestedMission });
+    return;
+  }
+
   db.get(
     `
     SELECT *
@@ -186,11 +207,13 @@ app.get("/writing", (req, res) => {
 });
 
 app.get("/conversation", (req, res) => {
-  res.render("conversation");
+  const content = getConversationContent(getRequestedUnitId(req, 4));
+  res.render("conversation", { content });
 });
 
 app.get("/speaking", (req, res) => {
-  const prompt = speakingPrompts[Math.floor(Math.random() * speakingPrompts.length)];
+  const prompts = getSpeakingPrompts(getRequestedUnitId(req, 5), speakingPrompts);
+  const prompt = prompts[Math.floor(Math.random() * prompts.length)];
 
   res.render("speaking", { prompt });
 });

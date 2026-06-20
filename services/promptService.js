@@ -39,7 +39,7 @@ Useful alternatives:
 }
 
 function buildLessonQuestionPrompt(category) {
-  const lessonFocus = category && category.id !== "all" ? category.label : "SAP Support, customer service, or professional work";
+  const lessonFocus = category && category.id !== "all" ? category.label : "customer support, service operations, or professional work";
 
   return `
 You are an English teacher helping a Brazilian Portuguese speaker learn professional English.
@@ -74,10 +74,10 @@ Rules:
 
 function buildConversationMessagePrompt(scenario, messages) {
   return `
-You are roleplaying as a customer in a realistic SAP support conversation.
+You are roleplaying as a customer in a realistic product or service support conversation.
 
 Scenario:
-${scenario || "A customer reports an issue with an SAP transaction."}
+${scenario || "A customer reports an issue while using a business application."}
 
 Conversation so far:
 ${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}
@@ -87,7 +87,7 @@ Reply as the customer only.
 Rules:
 - Write only one short customer message in English.
 - Do not correct the user yet.
-- Keep the situation realistic for SAP support or customer service.
+- Keep the situation realistic for customer, technical, or service support.
 - Ask for clarification, provide details, or react naturally.
 - Do not add labels, markdown, or explanations.
 `;
@@ -105,7 +105,7 @@ You are an English teacher helping a Brazilian Portuguese speaker improve profes
 Review the user's support replies in this conversation.
 
 Scenario:
-${scenario || "A customer reports an issue with an SAP transaction."}
+${scenario || "A customer reports an issue while using a business application."}
 
 Conversation:
 ${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}
@@ -135,7 +135,7 @@ Useful alternatives:
 Rules:
 - Keep corrected replies in English.
 - Use Portuguese only in the explanation.
-- Focus on professional tone, clarity, empathy, and useful SAP support language.
+- Focus on professional tone, clarity, empathy, and broadly useful support language.
 - Keep the feedback concise.
 `;
 }

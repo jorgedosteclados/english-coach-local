@@ -249,6 +249,7 @@ async function main() {
 
         assert.equal(body.correctAnswers, 1);
         assert.ok(body.xpEarned > 0);
+        assert.equal(body.unitId, 8);
 
         await route.fulfill({
           json: {
@@ -259,8 +260,9 @@ async function main() {
         });
       });
 
-      await page.goto(`${baseURL}/writing`);
+      await page.goto(`${baseURL}/writing?unit=8`);
       await pause();
+      await expectVisibleText(page, "Follow Up Clearly");
       await page.getByLabel("Your message").fill("Hi Ana, could you please share more details?");
       await pause();
       await page.getByRole("button", { name: "Check My Writing" }).click();
@@ -318,9 +320,9 @@ async function main() {
     await run(results, "conversation completes with customer replies and feedback", async () => {
       const page = await newPage(browser);
       const customerReplies = [
-        "The error says that the document cannot be saved because a mandatory field is missing.",
-        "The transaction code is VA01, and it happens when I click Save.",
-        "I can send a screenshot and the timestamp of the issue.",
+        "The source system shows the record as sent, but the destination never receives it.",
+        "The request identifier is 48271, and the last successful sync was yesterday.",
+        "I can send the integration logs and the timestamp of the failure.",
         "Thank you, I will wait for your update."
       ];
       let customerReplyIndex = 0;
@@ -366,26 +368,26 @@ async function main() {
           xpEarned: 15,
           correctAnswers: 1,
           wrongAnswers: 0,
-          unitId: 4
+          unitId: 15
         });
 
         await route.fulfill({
           json: {
             success: true,
             streakDays: 6,
-            unitProgress: { unitId: 4, status: "completed" }
+            unitProgress: { unitId: 15, status: "completed" }
           }
         });
       });
 
-      await page.goto(`${baseURL}/conversation`);
+      await page.goto(`${baseURL}/conversation?unit=15`);
       await pause();
-      await expectVisibleText(page, "Customer Conversation");
+      await expectVisibleText(page, "Integration Conversation");
 
       const supportReplies = [
         "Hi, thank you for contacting us. Could you please share the exact error message?",
-        "Thanks. Could you please confirm the transaction code and when the error appears?",
-        "Please send the screenshot and timestamp so I can investigate further.",
+        "Thanks. Could you please confirm the request identifier and the last successful synchronization?",
+        "Please send the integration logs and timestamp so I can investigate further.",
         "Thank you for the details. I will investigate this issue and keep you updated."
       ];
 
@@ -446,22 +448,23 @@ async function main() {
           xpEarned: 20,
           correctAnswers: 1,
           wrongAnswers: 0,
-          unitId: 5
+          unitId: 19
         });
 
         await route.fulfill({
           json: {
             success: true,
             streakDays: 7,
-            unitProgress: { unitId: 5, status: "completed" }
+            unitProgress: { unitId: 19, status: "completed" }
           }
         });
       });
 
-      await page.goto(`${baseURL}/speaking`);
+      await page.goto(`${baseURL}/speaking?unit=19`);
       await pause();
       await expectVisibleText(page, "Speaking Practice");
       await expectVisibleText(page, "Say this aloud");
+      await expectVisibleText(page, "coordinate with the relevant team");
       await page.getByRole("button", { name: "Show Better Version" }).click();
       await expectVisibleText(page, "More natural version");
 

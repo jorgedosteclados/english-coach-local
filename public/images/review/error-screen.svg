@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
-  <title id="title">SAP error screen illustration</title>
+  <title id="title">Application error screen illustration</title>
   <desc id="desc">A support screen showing an error state and a screenshot request context.</desc>
   <rect width="640" height="360" rx="28" fill="#eef4ff"/>
   <rect x="72" y="56" width="496" height="248" rx="18" fill="#ffffff" stroke="#b2ccff" stroke-width="4"/>

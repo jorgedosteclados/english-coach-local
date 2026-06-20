@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
-  <title id="title">Transaction code illustration</title>
-  <desc id="desc">A SAP support form asking for a transaction code.</desc>
+  <title id="title">Request identifier illustration</title>
+  <desc id="desc">A support form asking for a request identifier.</desc>
   <rect width="640" height="360" rx="28" fill="#fffbeb"/>
   <rect x="90" y="58" width="460" height="244" rx="22" fill="#ffffff" stroke="#fedf89" stroke-width="4"/>
   <rect x="128" y="98" width="384" height="56" rx="14" fill="#f2f4f7"/>

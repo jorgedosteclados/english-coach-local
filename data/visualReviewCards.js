@@ -3,7 +3,7 @@ const visualReviewCards = [
     id: "screenshot-error",
     image: "/images/review/error-screen.svg",
     category: "Request information",
-    contextPt: "O cliente recebeu um erro no SAP e voce precisa pedir o print.",
+    contextPt: "O cliente recebeu um erro no sistema e voce precisa pedir o print.",
     promptPt: "Peca o print do erro de forma profissional.",
     targetPhrase: "Could you please send a screenshot of the error?",
     professionalVersion:
@@ -25,16 +25,16 @@ const visualReviewCards = [
       "'I am still investigating' soa natural para trabalho em andamento. Evite prometer prazo se voce ainda nao tem a resposta."
   },
   {
-    id: "transaction-code",
+    id: "request-identifier",
     image: "/images/review/transaction-code.svg",
-    category: "SAP support",
-    contextPt: "Voce precisa saber qual transacao SAP o cliente estava usando.",
-    promptPt: "Peca o codigo da transacao.",
-    targetPhrase: "Could you please provide the transaction code?",
+    category: "Systems and integrations",
+    contextPt: "Voce precisa identificar qual solicitacao falhou no sistema.",
+    promptPt: "Peca o identificador da solicitacao.",
+    targetPhrase: "Could you please provide the request identifier?",
     professionalVersion:
-      "Could you please provide the transaction code and the steps you followed before the error occurred?",
+      "Could you please provide the request identifier and the steps you followed before the error occurred?",
     tipPt:
-      "'Provide the transaction code' e mais natural que traduzir diretamente como 'inform the code'."
+      "'Provide the request identifier' e uma forma clara e profissional de pedir esse dado."
   },
   {
     id: "ticket-closure",

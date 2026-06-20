@@ -30,9 +30,9 @@ const lessonCategories = [
     source: "csv:tone"
   },
   {
-    id: "sap-ics",
-    label: "SAP support",
-    source: "csv:sap-ics"
+    id: "systems",
+    label: "Systems and integrations",
+    source: "csv:systems"
   },
   {
     id: "email",

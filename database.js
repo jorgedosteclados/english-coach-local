@@ -1,5 +1,6 @@
 const sqlite3 = require("sqlite3").verbose();
 const seedLessonQuestions = require("./data/seedLessonQuestions");
+const csvLessonQuestions = require("./data/csvLessonQuestions");
 const { learningPathUnits } = require("./data/learningPath");
 
 const db = new sqlite3.Database("./english_coach.db", (err) => {
@@ -79,7 +80,7 @@ const seedLessonQuestionStatement = db.prepare(`
   )
 `);
 
-seedLessonQuestions.forEach((question) => {
+[...seedLessonQuestions, ...csvLessonQuestions].forEach((question) => {
   seedLessonQuestionStatement.run([
     question.questionPt,
     JSON.stringify(question.options),
@@ -96,6 +97,22 @@ seedLessonQuestionStatement.finalize((seedError) => {
     console.error("Error seeding lesson questions:", seedError.message);
   }
 });
+
+db.run(
+  `
+  DELETE FROM lesson_questions
+  WHERE source = 'csv:sap-ics'
+    OR question_pt LIKE '%SAP%'
+    OR question_pt LIKE '%Concur%'
+    OR options_json LIKE '%SAP%'
+    OR options_json LIKE '%Concur%'
+  `,
+  (cleanupError) => {
+    if (cleanupError) {
+      console.error("Error removing legacy branded questions:", cleanupError.message);
+    }
+  }
+);
 
 db.run(`
   CREATE TABLE IF NOT EXISTS learning_units (

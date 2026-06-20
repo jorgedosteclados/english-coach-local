@@ -1,6 +1,6 @@
 const speakingPrompts = [
   {
-    scenario: "A customer asks for an update on a critical SAP ticket.",
+    scenario: "A customer asks for an update on a critical support ticket.",
     targetPhrase:
       "I am still investigating this issue and will update you as soon as I have more information.",
     betterVersion:

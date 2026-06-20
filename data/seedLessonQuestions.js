@@ -130,30 +130,78 @@ const seedLessonQuestions = [
       "A forma natural e 'the urgency of this issue'. Isso soa profissional e empatico."
   },
   {
-    source: "csv:sap-ics",
-    questionPt: "O erro ocorre ao salvar o pedido no SAP.",
+    source: "csv:systems",
+    questionPt: "O erro ocorre ao enviar os dados para o sistema externo.",
     options: [
-      "The error occurs when saving the order in SAP.",
-      "The error happens when save the order on SAP.",
-      "The error occur to save the order in SAP.",
-      "The error is happening in save the order at SAP."
+      "The error occurs when sending the data to the external system.",
+      "The error happens when send the data for the external system.",
+      "The error occur while sending data at the external system.",
+      "The error is happening to send the data on the external system."
     ],
-    correctAnswer: "The error occurs when saving the order in SAP.",
+    correctAnswer: "The error occurs when sending the data to the external system.",
     explanationPt:
-      "'Occurs when saving' e natural para descrever em que momento o erro acontece."
+      "'Occurs when sending' e natural para descrever em que momento o erro acontece."
   },
   {
-    source: "csv:sap-ics",
-    questionPt: "Por favor, informe o codigo da transacao.",
+    source: "csv:systems",
+    questionPt: "Por favor, informe o identificador da solicitacao.",
     options: [
-      "Please provide the transaction code.",
-      "Please inform the transaction code.",
-      "Please provide me the code of transaction.",
-      "Please say the transaction code."
+      "Please provide the request identifier.",
+      "Please inform the identifier of request.",
+      "Please provide me the request identification.",
+      "Please say the identifier request."
     ],
-    correctAnswer: "Please provide the transaction code.",
+    correctAnswer: "Please provide the request identifier.",
     explanationPt:
-      "Em ingles profissional, 'provide the transaction code' soa mais natural que 'inform the code'."
+      "Em ingles profissional, 'provide the request identifier' e uma forma clara de pedir o dado."
+  },
+  {
+    source: "csv:systems",
+    questionPt: "A integracao nao recebeu uma resposta do sistema de destino.",
+    options: [
+      "The integration did not receive a response from the destination system.",
+      "The integration did not received a response of the destination system.",
+      "The integration has not receive an answer from destination system.",
+      "The integration did not get response by the system destination."
+    ],
+    correctAnswer: "The integration did not receive a response from the destination system.",
+    explanationPt: "Depois de 'did not', usamos o verbo base: 'receive'."
+  },
+  {
+    source: "csv:systems",
+    questionPt: "Voce pode compartilhar os logs do momento da falha?",
+    options: [
+      "Could you share the logs from the time of the failure?",
+      "Could you share the logs in the failure time?",
+      "Can you share the loggings when the failure happened?",
+      "Could you send logs of when failed?"
+    ],
+    correctAnswer: "Could you share the logs from the time of the failure?",
+    explanationPt: "'Logs from the time of the failure' indica claramente o periodo necessario."
+  },
+  {
+    source: "csv:systems",
+    questionPt: "Os dados foram enviados, mas ainda nao foram processados.",
+    options: [
+      "The data was sent but has not been processed yet.",
+      "The data was sent but was not process yet.",
+      "The data has sent but did not processed yet.",
+      "The data was sending but is not processed already."
+    ],
+    correctAnswer: "The data was sent but has not been processed yet.",
+    explanationPt: "A voz passiva 'was sent' e 'has not been processed yet' descreve o estado atual."
+  },
+  {
+    source: "csv:systems",
+    questionPt: "Precisamos confirmar onde o fluxo esta falhando.",
+    options: [
+      "We need to confirm where the flow is failing.",
+      "We need confirm where is the flow failing.",
+      "We need to confirm where the flow does fail.",
+      "We need confirming in which place the flow fails."
+    ],
+    correctAnswer: "We need to confirm where the flow is failing.",
+    explanationPt: "Em pergunta indireta, mantemos a ordem 'where the flow is failing'."
   },
   {
     source: "csv:email",

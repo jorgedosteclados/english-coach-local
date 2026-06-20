@@ -1,6 +1,6 @@
 # English Coach Local
 
-Local English practice app focused on professional customer support, SAP support phrases, writing, conversation, speaking, and visual/audio review.
+Local English practice app focused on professional customer and technical support, writing, conversation, speaking, and visual/audio review.
 
 Project decisions, implemented features, current work, and roadmap are maintained in
 [`PROJECT_STATUS.md`](PROJECT_STATUS.md). Update that file with every relevant change.

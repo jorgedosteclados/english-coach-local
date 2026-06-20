@@ -25,14 +25,14 @@ const learningPathSections = [
   },
   {
     id: 3,
-    title: "SAP Specialist",
-    description: "Use precise English for SAP, Concur, integrations, and technical scope.",
+    title: "Technical Problem Solving",
+    description: "Use precise English for systems, integrations, impact, and technical scope.",
     units: [
-      unit(11, "SAP and ICS", "Practice technical phrases for SAP and integration cases.", "lesson", "/lesson?unit=11&category=sap-ics"),
+      unit(11, "Systems and Integrations", "Practice technical phrases for connected systems and data flows.", "lesson", "/lesson?unit=11&category=systems"),
       unit(12, "Explain the Impact", "Describe business impact clearly and objectively.", "lesson", "/lesson?unit=12&category=impact"),
       unit(13, "Clarify the Scope", "Separate product issues from configuration questions.", "lesson", "/lesson?unit=13&category=scope"),
       unit(14, "Technical Correction", "Improve the accuracy of a technical explanation.", "correction", "/correct?unit=14"),
-      unit(15, "Integration Conversation", "Guide a customer through an integration case.", "conversation", "/conversation?unit=15")
+      unit(15, "Integration Conversation", "Guide a customer through a system integration case.", "conversation", "/conversation?unit=15")
     ]
   },
   {

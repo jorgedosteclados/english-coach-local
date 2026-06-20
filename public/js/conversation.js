@@ -8,14 +8,14 @@ const conversationResult = document.getElementById("conversationResult");
 const conversationResultContent = document.getElementById("conversationResultContent");
 const requestedConversationUnitId = Number(new URLSearchParams(window.location.search).get("unit"));
 const conversationUnitId = requestedConversationUnitId > 0 ? requestedConversationUnitId : 4;
+const conversationData = JSON.parse(document.getElementById("conversationData").textContent);
 
 const maxUserReplies = 4;
 const conversationXp = 15;
 const messages = [
   {
     role: "customer",
-    content:
-      "Hi, I am trying to save a transaction in SAP, but I receive an error and cannot continue."
+    content: conversationData.initialMessage
   }
 ];
 
@@ -155,7 +155,7 @@ async function finishConversation() {
         "Your replies were understandable. Review them and try to keep each message clear, polite, and specific.",
         "",
         "More natural:",
-        "Could you please share the exact error message and the transaction code so I can investigate further?",
+        "Could you please share the exact error message and the steps you followed so I can investigate further?",
         "",
         "Professional version:",
         "Thank you for the information. I will investigate this issue and update you as soon as I have more details.",

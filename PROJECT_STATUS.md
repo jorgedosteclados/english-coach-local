@@ -8,8 +8,8 @@ technical decision, data change, test, or roadmap item changes.
 ## Product Vision
 
 English Coach Local is a local-first English practice app for professional customer
-support. Its main focus is practical language for SAP/Concur support, customer
-conversations, professional messages, pronunciation, and daily review.
+and technical support. Its main focus is broadly useful language for service teams,
+customer conversations, professional messages, pronunciation, and daily review.
 
 ## Current Stack
 
@@ -67,13 +67,13 @@ The home path contains 20 sequential steps grouped into four phases:
    customer conversation, and speaking practice.
 2. **Ticket Mastery**: case updates, troubleshooting, follow-up writing,
    difficult conversations, and call confidence.
-3. **SAP Specialist**: SAP/ICS language, business impact, technical scope,
-   technical correction, and integration conversation.
+3. **Technical Problem Solving**: systems and integrations, business impact,
+   technical scope, technical correction, and integration conversation.
 4. **Confident Communicator**: professional tone, email, ticket closure,
    fluent support calls, and a final customer simulation.
 
 Each path URL carries its own `unit` identifier. Lesson nodes also carry a category,
-for example `/lesson?unit=11&category=sap-ics`. Activity clients send that unit ID
+for example `/lesson?unit=11&category=systems`. Activity clients send that unit ID
 when saving progress, so repeated activity types unlock the correct next node.
 
 Unlocking is enforced in both places:
@@ -112,6 +112,8 @@ Current five-question sequence:
 - Store AI-generated questions so the question bank grows over time.
 - Keep core practice flows usable even when an AI provider is unavailable.
 - All relevant behavior changes must include focused test coverage.
+- Keep the curriculum vendor-neutral. Use generic products, systems, integrations,
+  and service scenarios instead of centering the course on one company or platform.
 
 ## Next Work
 
@@ -157,3 +159,12 @@ speaking, daily review, and history.
 - Expanded the learning path from 5 to 20 sequential steps across 4 phases.
 - Preserved existing progress for the original first five units during migration.
 - Added phase-aware activity URLs and server-side prerequisite enforcement.
+
+### 2026-06-20
+
+- Repositioned the curriculum as general professional support English.
+- Replaced the vendor-specific third phase with Technical Problem Solving.
+- Added unit-specific writing, conversation, and speaking content.
+- Generalized lesson prompts, review cards, and the 72-question CSV bank.
+- Made CSV question loading automatic for new and existing installations.
+- Added cleanup for legacy branded questions in local databases.
