@@ -30,6 +30,7 @@ customer conversations, professional messages, pronunciation, and daily review.
 - Simulated customer conversations
 - Speaking practice with browser speech recognition
 - Visual, listening, and speaking daily review
+- Adaptive mistake review with spaced scheduling
 - Local progress, XP, streak, achievements, and history
 - Responsive UI and Mini Beagle Coach mascot
 - Setup instructions for moving the app to another computer
@@ -37,7 +38,7 @@ customer conversations, professional messages, pronunciation, and daily review.
 ## Question Bank
 
 - `questions_seed.csv` contains 72 imported questions.
-- The database also has 14 built-in seed questions, for 86 total after import.
+- The database also has 16 unique built-in questions, for 88 total after import.
 - A saved question is selected only while `times_used = 0`.
 - AI generates a new question only after unused saved questions in the selected
   category are exhausted.
@@ -46,7 +47,7 @@ customer conversations, professional messages, pronunciation, and daily review.
 
 ## Current UX Direction
 
-The home page is being redesigned around a learning path:
+The home page is organized around a learning path:
 
 - Desktop: fixed navigation on the left, learning path in the center, progress and
   quick practice on the right.
@@ -104,6 +105,19 @@ Current five-question sequence:
 4. Read and speak the phrase with microphone recognition and typed fallback.
 5. Finish with another contextual multiple-choice challenge.
 
+## Adaptive Review
+
+Every saved lesson question includes a stable `questionId`. Each answer records:
+
+- question and learning-path unit;
+- exercise type and submitted answer;
+- whether the answer was correct;
+- total correct/wrong attempts and current correct streak.
+
+Wrong answers become due immediately in `/mistakes`. Correct reviews use spaced
+intervals of 1, 3, 7, and 14 days as the learner builds a correct streak. The
+Mistakes screen loads only questions due now and reschedules them after review.
+
 ## Important Decisions
 
 - Keep the app local-first; the SQLite database is not committed.
@@ -120,7 +134,7 @@ Current five-question sequence:
 1. Review the learning-path home with real users and refine spacing or interactions
    from their feedback.
 2. Validate audio voices and microphone permissions on the target desktop and phone browsers.
-3. Add a question-bank dashboard with unused, used, and AI-generated counts.
+3. Add a question-bank dashboard with unused, used, AI-generated, and mastery counts.
 4. Add a focused automated test for saved-question exhaustion before AI generation.
 5. Improve speaking feedback with word-level pronunciation guidance and reference audio.
 6. Add export/import for progress, history, and question data.
@@ -135,7 +149,7 @@ npm test
 ```
 
 Expected coverage includes home/path, lessons, writing, correction, conversation,
-speaking, daily review, and history.
+speaking, adaptive review, daily review, and history.
 
 ## Change Log
 
@@ -168,3 +182,9 @@ speaking, daily review, and history.
 - Generalized lesson prompts, review cards, and the 72-question CSV bank.
 - Made CSV question loading automatic for new and existing installations.
 - Added cleanup for legacy branded questions in local databases.
+- Added per-question attempt history and mastery tracking.
+- Added spaced mistake review at 1, 3, 7, and 14-day intervals.
+- Added a dedicated Mistakes screen and navigation entry.
+- Expanded the main E2E suite to 9 flows, including real adaptive scheduling.
+- Fixed speaking completion to replace the practice form with result actions for
+  continuing the path or practicing again.

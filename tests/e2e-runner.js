@@ -144,7 +144,18 @@ async function main() {
           categoryQuestionIndex += 1;
         }
 
-        await route.fulfill({ json: question });
+        await route.fulfill({
+          json: {
+            ...question,
+            questionId: mockQuestions.indexOf(question) + 1
+          }
+        });
+      });
+
+      const savedAttempts = [];
+      await page.route("**/ai/save-question-attempt", async (route) => {
+        savedAttempts.push(route.request().postDataJSON());
+        await route.fulfill({ json: { success: true } });
       });
 
       await page.route("**/ai/save-lesson-progress", async (route) => {
@@ -228,6 +239,44 @@ async function main() {
       await expectVisibleText(page, "Progress saved successfully.");
       await expectVisibleText(page, "XP earned");
       assert.ok(requestedCategories.includes("request-info"));
+      assert.equal(savedAttempts.length, 5);
+      assert.deepEqual(
+        savedAttempts.map((attempt) => attempt.exerciseType),
+        ["multiple-choice", "listen-build", "listen-type", "speak", "multiple-choice"]
+      );
+      assert.equal(savedAttempts.every((attempt) => attempt.isCorrect), true);
+      await pause();
+      await page.close();
+    });
+
+    await run(results, "adaptive review schedules mistakes", async () => {
+      const reviewQuestion = await getReviewTestQuestion();
+      const page = await newPage(browser);
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const wrongResponse = await page.request.post(`${baseURL}/ai/save-question-attempt`, {
+          data: {
+            questionId: reviewQuestion.questionId,
+            exerciseType: "multiple-choice",
+            userAnswer: "Incorrect review answer",
+            isCorrect: false
+          }
+        });
+        assert.equal(wrongResponse.status(), 200);
+      }
+
+      await page.goto(`${baseURL}/mistakes`);
+      await expectVisibleText(page, "Review your mistakes");
+      await expectVisibleText(page, reviewQuestion.questionPt);
+      await expectVisibleText(page, "2 mistakes");
+      await page.getByRole("button", { name: reviewQuestion.correctAnswer }).click();
+      const saveResponsePromise = page.waitForResponse("**/ai/save-question-attempt");
+      await page.getByRole("button", { name: "Check answer" }).click();
+      const saveResponse = await saveResponsePromise;
+      assert.equal(saveResponse.status(), 200);
+      await expectVisibleText(page, "Correct.");
+      await page.getByRole("button", { name: "Continue" }).click();
+      await expectVisibleText(page, "Review complete!");
       await pause();
       await page.close();
     });
@@ -478,6 +527,9 @@ async function main() {
       await page.getByRole("button", { name: "I Practiced This" }).click();
       await expectVisibleText(page, "Speaking complete!");
       await expectVisibleText(page, "Progress saved successfully.");
+      assert.equal(await page.getByRole("link", { name: "Continue path" }).getAttribute("href"), "/");
+      await page.getByRole("button", { name: "Practice again" }).waitFor();
+      assert.equal(await page.locator("#speakingCard").isHidden(), true);
       await pause();
       await page.close();
     });
@@ -684,6 +736,31 @@ function seedHistoryCorrection() {
         }
 
         resolve();
+      }
+    );
+  });
+}
+
+function getReviewTestQuestion() {
+  return new Promise((resolve, reject) => {
+    const db = new sqlite3.Database(dbPath);
+
+    db.get(
+      "SELECT id, question_pt, correct_answer FROM lesson_questions ORDER BY id LIMIT 1",
+      [],
+      (selectError, question) => {
+        if (selectError || !question) {
+          db.close();
+          reject(selectError || new Error("No lesson question available for review test."));
+          return;
+        }
+
+        db.close();
+        resolve({
+          questionId: question.id,
+          questionPt: question.question_pt,
+          correctAnswer: question.correct_answer
+        });
       }
     );
   });

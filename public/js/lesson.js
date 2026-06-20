@@ -551,8 +551,29 @@ function checkAnswer() {
   lessonProgressBar.style.width = `${(questionNumber / totalQuestions) * 100}%`;
   updateScoreDisplay();
   saveLessonState();
+  saveAdaptiveAttempt(isCorrect);
   confirmAnswerBtn.classList.add("hidden");
   nextQuestionBtn.classList.remove("hidden");
+}
+
+function saveAdaptiveAttempt(isCorrect) {
+  if (!currentQuestion?.questionId) {
+    return;
+  }
+
+  fetch("/ai/save-question-attempt", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      questionId: currentQuestion.questionId,
+      unitId: activeLessonUnitId,
+      exerciseType: getExerciseType(),
+      userAnswer: selectedOption,
+      isCorrect
+    })
+  }).catch((error) => {
+    console.error("Could not save adaptive review data:", error);
+  });
 }
 
 function renderAnsweredOptions() {

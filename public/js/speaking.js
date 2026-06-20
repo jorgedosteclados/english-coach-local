@@ -14,6 +14,7 @@ const speakingFeedback = document.getElementById("speakingFeedback");
 const betterPhrase = document.getElementById("betterPhrase");
 const speakingResult = document.getElementById("speakingResult");
 const speakingResultContent = document.getElementById("speakingResultContent");
+const speakingCard = document.getElementById("speakingCard");
 
 let recognition = null;
 let lastTranscript = "";
@@ -227,8 +228,19 @@ async function saveSpeakingProgress() {
           </div>
         </div>
         <p class="save-status">Progress saved successfully.</p>
+        <div class="speaking-complete-actions">
+          <a href="/" class="primary-link">Continue path</a>
+          <button type="button" class="secondary-btn" id="practiceSpeakingAgainBtn">Practice again</button>
+        </div>
       </div>
     `;
+
+    speakingCard.classList.add("hidden");
+    speakingResult.classList.remove("hidden");
+    document.getElementById("practiceSpeakingAgainBtn").addEventListener("click", () => {
+      window.location.reload();
+    });
+    speakingResult.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     console.error(error);
     progressSaved = false;
@@ -240,9 +252,8 @@ async function saveSpeakingProgress() {
         <p class="motivation-message">Your practice worked, but progress could not be saved. Try again.</p>
       </div>
     `;
+    speakingResult.classList.remove("hidden");
   }
-
-  speakingResult.classList.remove("hidden");
 }
 
 recordSpeechBtn.addEventListener("click", () => {

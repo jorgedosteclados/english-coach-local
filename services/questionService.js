@@ -69,6 +69,7 @@ function loadSavedQuestion(categoryId) {
         );
 
         return resolve({
+          questionId: row.id,
           question: row.question_pt,
           questionPt: row.question_pt,
           options,
@@ -104,7 +105,11 @@ function saveAIQuestion(question, category) {
           console.error("Error saving AI lesson question:", insertError.message);
         }
 
-        resolve(question);
+        resolve({
+          ...question,
+          questionId: this.lastID || null,
+          source
+        });
       }
     );
   });

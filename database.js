@@ -68,6 +68,33 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS question_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL,
+    unit_id INTEGER,
+    exercise_type TEXT NOT NULL,
+    user_answer TEXT NOT NULL,
+    is_correct INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (question_id) REFERENCES lesson_questions(id),
+    FOREIGN KEY (unit_id) REFERENCES learning_units(id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS question_mastery (
+    question_id INTEGER PRIMARY KEY,
+    total_correct INTEGER DEFAULT 0,
+    total_wrong INTEGER DEFAULT 0,
+    correct_streak INTEGER DEFAULT 0,
+    last_result INTEGER DEFAULT 0,
+    last_attempt_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    next_review_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (question_id) REFERENCES lesson_questions(id)
+  )
+`);
+
 const seedLessonQuestionStatement = db.prepare(`
   INSERT INTO lesson_questions
     (question_pt, options_json, correct_answer, explanation_pt, source)

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Mistakes</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="lesson-page mistakes-page">
+  <main class="lesson-shell mistakes-shell">
+    <header class="lesson-topbar">
+      <a href="/" class="lesson-close" aria-label="Back to learning path">×</a>
+      <div class="lesson-progress-wrap">
+        <div class="lesson-progress-track"><span id="mistakeProgressBar"></span></div>
+        <p id="mistakeProgress"><%= questions.length ? `1 of ${questions.length}` : 'No reviews due' %></p>
+      </div>
+      <div class="lesson-xp"><strong>M</strong><span>Review</span></div>
+    </header>
+
+    <section class="lesson-heading">
+      <div>
+        <p>Adaptive review</p>
+        <h1>Review your mistakes</h1>
+      </div>
+    </section>
+
+    <% if (questions.length === 0) { %>
+      <section class="lesson-exercise mistakes-empty">
+        <div class="success-badge">✓</div>
+        <h2>You are caught up</h2>
+        <p>Complete more lessons or return when your next review is due.</p>
+        <a href="/" class="primary-link">Back to learning path</a>
+      </section>
+    <% } else { %>
+      <section class="lesson-exercise" id="mistakeExercise">
+        <div class="mistake-mastery" id="mistakeMastery"></div>
+        <div class="lesson-prompt">
+          <span>Choose the best English version</span>
+          <p class="question-text" id="mistakeQuestion"></p>
+        </div>
+        <div class="options" id="mistakeOptions" aria-label="Answer options"></div>
+        <div id="mistakeFeedback" class="feedback-box hidden" role="status"></div>
+        <div class="lesson-actions">
+          <button id="checkMistakeBtn" class="hidden">Check answer</button>
+          <button id="nextMistakeBtn" class="hidden">Continue</button>
+        </div>
+      </section>
+    <% } %>
+  </main>
+
+  <script type="application/json" id="mistakeQuestionsData"><%- questionsJson %></script>
+  <% if (questions.length > 0) { %><script src="/js/mistakes.js"></script><% } %>
+</body>
+</html>

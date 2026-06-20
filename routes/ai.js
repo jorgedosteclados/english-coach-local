@@ -11,6 +11,7 @@ const {
 } = require("../services/promptService");
 const { getLessonQuestion } = require("../services/questionService");
 const { saveProgress } = require("../services/progressService");
+const { saveQuestionAttempt } = require("../services/reviewService");
 
 router.post("/correct", async (req, res) => {
   try {
@@ -147,6 +148,15 @@ router.post("/save-lesson-progress", async (req, res) => {
     res.status(error.statusCode || 500).json({
       error: error.message
     });
+  }
+});
+
+router.post("/save-question-attempt", async (req, res) => {
+  try {
+    const result = await saveQuestionAttempt(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
 

@@ -16,6 +16,7 @@ const {
   getConversationContent,
   getSpeakingPrompts
 } = require("./data/unitContent");
+const { getDueMistakes } = require("./services/reviewService");
 const PORT = 3000;
 
 const learningPathMetadata = new Map(learningPathUnits.map((unit) => [unit.id, unit]));
@@ -148,6 +149,17 @@ app.get("/lesson", (req, res) => {
 
 app.get("/review", (req, res) => {
   res.render("review", { reviewCards: visualReviewCards });
+});
+
+app.get("/mistakes", async (req, res) => {
+  try {
+    const questions = await getDueMistakes(10);
+    const questionsJson = JSON.stringify(questions).replace(/</g, "\\u003c");
+    res.render("mistakes", { questions, questionsJson });
+  } catch (error) {
+    console.error("Error loading mistakes:", error.message);
+    res.render("mistakes", { questions: [], questionsJson: "[]" });
+  }
 });
 
 app.get("/units", (req, res) => {
