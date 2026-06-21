@@ -45,6 +45,8 @@ https://doi.org/10.1017/S0272263109990520
 **Product translation:** Checked answers receive immediate correctness feedback,
 the target form, and an explanation. Speaking practice compares the learner's words
 with the target phrase and provides a corrected version.
+Short sound cues reinforce feedback timing, but remain optional and never carry
+correctness information without the corresponding visual correction.
 
 ## CEFR Reference
 

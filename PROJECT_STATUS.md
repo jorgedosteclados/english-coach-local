@@ -277,3 +277,6 @@ speaking, adaptive review, daily review, and history.
   run while the app is open without changing the learner's local progress.
 - Randomized common-lesson answer positions with no repeated correct position inside
   the same session cycle; added regression coverage against answer-position patterns.
+- Added a shared offline sound manager with distinct correct, incorrect, completion,
+  checkpoint, and unlock cues plus persisted mute and volume controls. Sound cues never
+  replace visual feedback and are suppressed while reference speech is playing.

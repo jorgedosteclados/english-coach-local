@@ -47,7 +47,10 @@ applyButton.addEventListener("click", async () => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Unable to update your path.");
-    window.location.href = result.startHref || "/";
+    window.EnglishCoachSound?.play("unlock");
+    window.setTimeout(() => {
+      window.location.href = result.startHref || "/";
+    }, 380);
   } catch (error) {
     applyStatus.textContent = error.message;
     applyStatus.classList.remove("hidden");
@@ -116,6 +119,7 @@ async function submitPlacement() {
 }
 
 function renderResult(result) {
+  window.EnglishCoachSound?.play("complete");
   completedAssessment = result;
   questionCard.classList.add("hidden");
   resultCard.classList.remove("hidden");

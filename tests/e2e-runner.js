@@ -100,6 +100,12 @@ async function main() {
       await expectVisibleText(page, "Daily Review");
       await expectVisibleText(page, "3 of 24 units completed");
       await expectVisibleText(page, "Your badges");
+      await page.getByRole("button", { name: "Sound effects are on" }).click();
+      await page.locator("#soundVolume").fill("25");
+      await page.getByRole("button", { name: "Mute effects" }).click();
+      await page.reload();
+      await page.getByRole("button", { name: "Sound effects are off" }).waitFor();
+      assert.equal(await page.evaluate(() => window.EnglishCoachSound.getSettings().volume), 0.25);
       const conversationStep = page.getByRole("button", { name: /Customer Conversation/ });
       await conversationStep.click();
       const practiceLink = conversationStep.getByRole("link", { name: "Start lesson +10 XP" });
@@ -247,6 +253,10 @@ async function main() {
       });
 
       await page.goto(`${baseURL}/lesson?unit=6&category=request-info`);
+      await page.evaluate(() => {
+        window.testSoundEvents = [];
+        window.EnglishCoachSound.play = (name) => window.testSoundEvents.push(name);
+      });
       await pause();
       await expectVisibleText(page, "Practice focus");
       const categorySelected = await page.evaluate(() => {
@@ -306,6 +316,9 @@ async function main() {
       await expectVisibleText(page, "Lesson complete!");
       await expectVisibleText(page, "Progress saved successfully.");
       await expectVisibleText(page, "XP earned");
+      const soundEvents = await page.evaluate(() => window.testSoundEvents);
+      assert.equal(soundEvents.filter((event) => event === "correct").length, 5);
+      assert.ok(soundEvents.includes("complete"));
       await page.getByRole("button", { name: "Continue to next lesson" }).click();
       await page.waitForURL("**/lesson?unit=7&category=troubleshooting");
       assert.ok(requestedCategories.includes("request-info"));

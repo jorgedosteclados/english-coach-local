@@ -145,6 +145,7 @@ function checkReviewAnswer() {
   } else {
     wrongReviewAnswers++;
   }
+  window.EnglishCoachSound?.play(passed ? "correct" : "incorrect");
 
   reviewAnswerBox.classList.remove("hidden");
   reviewFeedback.innerHTML = `
@@ -157,6 +158,7 @@ function checkReviewAnswer() {
 }
 
 async function finishReview() {
+  window.EnglishCoachSound?.play("complete");
   const xpEarned = correctReviewAnswers * 8 + wrongReviewAnswers * 3;
 
   reviewResult.classList.remove("hidden");

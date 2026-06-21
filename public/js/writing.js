@@ -125,6 +125,7 @@ async function saveMissionProgress() {
 }
 
 function renderMissionComplete(feedback, progress) {
+  window.EnglishCoachSound?.play("complete");
   missionCompleted = true;
   localStorage.removeItem(writingDraftKey);
   writingForm.classList.add("hidden");

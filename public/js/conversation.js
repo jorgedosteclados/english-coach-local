@@ -230,6 +230,7 @@ async function saveConversationProgress() {
 }
 
 function renderConversationComplete(feedback, progress) {
+  window.EnglishCoachSound?.play("complete");
   const streakText = progress && progress.streakDays ? `${progress.streakDays} day` : "Saved";
   const nextHref = progress?.nextUnit?.href || "/progress";
   const continueLabel = progress?.nextUnit ? "Continue to next lesson" : "View final progress";

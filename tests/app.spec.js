@@ -70,6 +70,14 @@ test("home and learning path render the main navigation", async ({ page }) => {
   await expect(page.getByText(/Phase \d of 4/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Support Basics/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Quick review" })).toHaveAttribute("href", "/review");
+  await page.getByRole("button", { name: "Sound effects are on" }).click();
+  await page.locator("#soundVolume").fill("25");
+  await page.getByRole("button", { name: "Mute effects" }).click();
+  await expect(page.getByRole("button", { name: "Sound effects are off" })).toBeVisible();
+  expect(await page.evaluate(() => window.EnglishCoachSound.getSettings().volume)).toBe(0.25);
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem("englishCoach.sound.settings")))
+  ).toEqual({ muted: true, volume: 0.25 });
 
   await page.goto("/units");
   await expect(page).toHaveURL(/\/$/);
@@ -159,6 +167,10 @@ test("lesson can be completed from question to saved progress", async ({ page })
   });
 
   await page.goto("/lesson");
+  await page.evaluate(() => {
+    window.testSoundEvents = [];
+    window.EnglishCoachSound.play = (name) => window.testSoundEvents.push(name);
+  });
 
   for (const [questionIndex, question] of mockQuestions.entries()) {
     if (questionIndex === 0 || questionIndex === 4) {
@@ -197,6 +209,8 @@ test("lesson can be completed from question to saved progress", async ({ page })
   await expect(page.locator(".completion-stats").getByText("50", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Continue to next lesson" })).toBeVisible();
   expect(new Set(correctOptionPositions).size).toBe(2);
+  await expect.poll(() => page.evaluate(() => window.testSoundEvents)).toContain("complete");
+  expect((await page.evaluate(() => window.testSoundEvents)).filter((event) => event === "correct")).toHaveLength(5);
 });
 
 test("writing mission submits text and shows feedback completion", async ({ page }) => {

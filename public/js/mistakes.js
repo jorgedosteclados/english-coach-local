@@ -62,6 +62,7 @@ async function checkMistake() {
     ? `Correct. ${question.explanationPt}`
     : `Not quite. Correct answer: ${question.correctAnswer}. ${question.explanationPt}`;
   mistakeFeedback.className = `feedback-box ${isCorrect ? "correct-feedback" : "wrong-feedback"}`;
+  window.EnglishCoachSound?.play(isCorrect ? "correct" : "incorrect");
   checkMistakeBtn.classList.add("hidden");
   nextMistakeBtn.classList.remove("hidden");
   mistakeProgressBar.style.width = `${((currentMistakeIndex + 1) / mistakeQuestions.length) * 100}%`;
@@ -83,6 +84,7 @@ async function checkMistake() {
 }
 
 function showReviewComplete() {
+  window.EnglishCoachSound?.play("complete");
   mistakeExercise.innerHTML = `
     <div class="lesson-complete">
       <div class="success-badge">✓</div>

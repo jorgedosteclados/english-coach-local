@@ -315,6 +315,7 @@ async function saveSpeakingProgress() {
     if (!data.success) {
       throw new Error("Progress was not saved.");
     }
+    window.EnglishCoachSound?.play("complete");
 
     const nextHref = data.nextUnit?.href || "/progress";
     const continueLabel = data.nextUnit ? "Continue to next lesson" : "View final progress";

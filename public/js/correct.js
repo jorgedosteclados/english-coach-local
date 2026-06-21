@@ -122,6 +122,7 @@ async function saveCorrectionProgress() {
 }
 
 function renderCorrectionComplete(feedback, progress) {
+  window.EnglishCoachSound?.play("complete");
   correctionCompleted = true;
   localStorage.removeItem(correctionDraftKey);
   correctForm.classList.add("hidden");

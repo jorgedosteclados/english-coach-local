@@ -209,26 +209,7 @@ function showQuestionShell() {
 }
 
 function playSound(type) {
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-  if (!AudioContext) {
-    return;
-  }
-
-  const audioContext = new AudioContext();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  oscillator.frequency.value = type === "correct" ? 880 : 220;
-  gainNode.gain.value = 0.08;
-  oscillator.start();
-
-  setTimeout(() => {
-    oscillator.stop();
-    audioContext.close();
-  }, 180);
+  window.EnglishCoachSound?.play(type === "wrong" ? "incorrect" : type);
 }
 
 function speakPhrase(rate = 0.88) {
@@ -713,6 +694,9 @@ async function finishLesson() {
     });
     const data = await response.json();
     configureLessonContinuation(data.nextUnit);
+    if (data.success) {
+      window.EnglishCoachSound?.play(isCheckpoint ? "checkpoint" : "complete");
+    }
     renderCompletionScreen(
       data.success ? `${data.streakDays} day` : "Not saved",
       data.success ? "Progress saved successfully." : "Progress could not be saved."
