@@ -66,6 +66,9 @@ async function resetProgress() {
   try {
     await run("DELETE FROM question_attempts");
     await run("DELETE FROM question_mastery");
+    await run("DELETE FROM activity_log");
+    await run("DELETE FROM learning_preferences");
+    await run("DELETE FROM placement_assessments");
     await run("DELETE FROM user_unit_progress");
     await run("DELETE FROM corrections");
     await run("UPDATE lesson_questions SET times_used = 0");
@@ -153,6 +156,9 @@ async function restoreBackup() {
     for (const table of [
       "question_attempts",
       "question_mastery",
+      "activity_log",
+      "placement_assessments",
+      "learning_preferences",
       "user_unit_progress",
       "corrections",
       "user_progress",
@@ -160,7 +166,13 @@ async function restoreBackup() {
       "writing_missions"
     ]) {
       await run(`DELETE FROM main.${table}`);
-      await run(`INSERT INTO main.${table} SELECT * FROM progress_backup.${table}`);
+      const backupTable = await get(
+        "SELECT name FROM progress_backup.sqlite_master WHERE type = 'table' AND name = ?",
+        [table]
+      );
+      if (backupTable) {
+        await run(`INSERT INTO main.${table} SELECT * FROM progress_backup.${table}`);
+      }
     }
 
     await run("COMMIT");

@@ -1,6 +1,6 @@
 # English Coach Local - Project Status
 
-Last updated: 2026-06-19
+Last updated: 2026-06-21
 
 This file is the persistent project record. Update it whenever a relevant feature,
 technical decision, data change, test, or roadmap item changes.
@@ -10,6 +10,34 @@ technical decision, data change, test, or roadmap item changes.
 English Coach Local is a local-first English practice app for professional customer
 and technical support. Its main focus is broadly useful language for service teams,
 customer conversations, professional messages, pronunciation, and daily review.
+
+## Evidence-Based Learning Principle
+
+The product must translate learning methods supported by real educational and
+cognitive-science research into practical features. The goal is not to claim that
+English Coach Local itself is "scientifically proven". The goal is to make its
+pedagogical decisions traceable to methods that credible studies have found effective.
+
+This principle must remain part of future product decisions:
+
+- Prioritize retrieval practice, spaced practice, corrective feedback, progressive
+  difficulty, interleaving, mastery checks, and meaningful contextual practice when
+  the evidence supports their use.
+- Before adding a major learning mechanic, identify the learning problem, the
+  research-supported method, and how the feature implements that method.
+- Prefer primary studies, systematic reviews, and established educational frameworks
+  over trends, competitor imitation, or unsupported engagement claims.
+- Keep evidence about a learning method separate from evidence about this product.
+  Do not describe the app itself as scientifically validated without an appropriate
+  study of the app and its learners.
+- Use product data such as retention, delayed recall, error recurrence, completion,
+  and skill improvement to verify whether the implementation is producing the intended
+  learning behavior.
+- Gamification should support practice frequency and persistence without replacing
+  learning quality or encouraging empty repetition.
+
+The research-to-feature mapping and starting bibliography are maintained in
+`docs/LEARNING_EVIDENCE.md` and must be updated with major pedagogical mechanics.
 
 ## Current Stack
 
@@ -31,6 +59,7 @@ customer conversations, professional messages, pronunciation, and daily review.
 - Speaking practice with browser speech recognition
 - Visual, listening, and speaking daily review
 - Adaptive mistake review with spaced scheduling
+- A1–B2 placement diagnostic with phase recommendation and skill breakdown
 - Local progress, XP, streak, achievements, and history
 - Responsive UI and Mini Beagle Coach mascot
 - Setup instructions for moving the app to another computer
@@ -44,6 +73,25 @@ customer conversations, professional messages, pronunciation, and daily review.
   category are exhausted.
 - AI-generated questions are saved with `times_used = 1` because they are returned
   to the learner immediately.
+
+## Pedagogical Matrix and Placement
+
+`data/pedagogy.js` records the learning methods, skill objectives, approximate CEFR
+levels, and learning-path phase mapping used by the product. Major learning mechanics
+should remain traceable to this matrix and to credible research.
+
+The placement diagnostic uses 12 progressively harder, deterministic questions:
+three each at A1, A2, B1, and B2. It measures meaning and comprehension, grammar and
+structure, professional tone, and problem-solving language. A level band is considered
+demonstrated with at least two correct answers out of three, progressing from the
+lowest band upward.
+
+The result is explicitly presented as an estimate rather than an official CEFR
+certification. It recommends a learning-path phase, saves the assessment for the
+progress dashboard, and never changes or deletes completed progress. After the result,
+the learner can explicitly start at the recommended phase or keep the current path.
+Earlier incomplete nodes become placement-skipped rather than completed: they grant no
+XP and are not included in completion metrics.
 
 ## Current UX Direction
 
@@ -135,6 +183,8 @@ Mistakes screen loads only questions due now and reschedules them after review.
 - All relevant behavior changes must include focused test coverage.
 - Keep the curriculum vendor-neutral. Use generic products, systems, integrations,
   and service scenarios instead of centering the course on one company or platform.
+- Base pedagogical mechanics on credible learning research and document how each major
+  mechanic turns that evidence into product behavior.
 
 ## Next Work
 
@@ -206,3 +256,22 @@ speaking, adaptive review, daily review, and history.
 - Expanded the main E2E suite to 10 flows with checkpoint pass/fail coverage.
 - Added a reusable local progress-state tool for fresh starts, checkpoint testing,
   status inspection, and restoring the original snapshot.
+
+### 2026-06-21
+
+- Added a progress and mastery dashboard with phase completion, seven-day XP,
+  category accuracy, weak phrases, and due adaptive reviews.
+- Added a daily activity log and included it in fresh-start and restore workflows.
+- Established evidence-based learning as a permanent product principle, while keeping
+  research support for a method distinct from scientific validation of the product.
+- Added the pedagogical skill/level matrix and an A1–B2 placement diagnostic with
+  server-side scoring, saved results, phase recommendation, and automated coverage.
+- Balanced and randomized placement answer positions so A, B, C, and D each contain
+  exactly three correct answers per assessment; added an E2E regression assertion.
+- Added an explicit post-placement choice to start at the recommended phase or retain
+  the current path, without counting skipped units as completed or awarding XP.
+- Standardized completion actions across lessons, writing, correction, conversation,
+  speaking, checkpoints, and daily review. Successful activities now continue to the
+  first incomplete path unit; course completion opens the final progress dashboard.
+- Isolated E2E and Playwright databases from `english_coach.db` so automated tests can
+  run while the app is open without changing the learner's local progress.

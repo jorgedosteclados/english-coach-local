@@ -1,4 +1,7 @@
 const db = require("../database");
+const { learningPathUnits } = require("../data/learningPath");
+
+const pathUnitById = new Map(learningPathUnits.map((unit) => [unit.id, unit]));
 
 function saveProgress({ xpEarned, correctAnswers, wrongAnswers, unitId }) {
   const xp = Number(xpEarned) || 0;
@@ -48,21 +51,89 @@ function saveProgress({ xpEarned, correctAnswers, wrongAnswers, unitId }) {
             unitProgress: null
           };
 
-          if (!completedUnitId) {
-            resolve(result);
-            return;
-          }
+          const continueAfterActivityLog = () => {
+            if (!completedUnitId) {
+              loadNextUnit((nextUnit) => resolve({ ...result, nextUnit }));
+              return;
+            }
 
-          saveUnitProgress(completedUnitId, (unitProgress) => {
-            resolve({
-              ...result,
-              unitProgress
+            saveUnitProgress(completedUnitId, (unitProgress) => {
+              loadNextUnit((nextUnit) => {
+                resolve({
+                  ...result,
+                  unitProgress,
+                  nextUnit
+                });
+              });
             });
-          });
+          };
+
+          db.run(
+            `
+            INSERT INTO activity_log (
+              unit_id,
+              activity_type,
+              xp_earned,
+              correct_answers,
+              wrong_answers
+            )
+            VALUES (?, 'practice', ?, ?, ?)
+            `,
+            [completedUnitId, xp, correct, wrong],
+            (activityError) => {
+              if (activityError) {
+                console.error("Error saving activity log:", activityError.message);
+              }
+
+              continueAfterActivityLog();
+            }
+          );
         }
       );
     });
   }));
+}
+
+function loadNextUnit(callback) {
+  db.get(
+    `
+    SELECT learning_units.id
+    FROM learning_units
+    WHERE learning_units.unit_order >= COALESCE(
+      (SELECT starting_unit_order FROM learning_preferences WHERE id = 1),
+      1
+    )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM user_unit_progress
+        WHERE user_id = 1
+          AND unit_id = learning_units.id
+          AND status = 'completed'
+      )
+    ORDER BY learning_units.unit_order
+    LIMIT 1
+    `,
+    [],
+    (error, row) => {
+      if (error) {
+        console.error("Error loading next learning path unit:", error.message);
+        callback(null);
+        return;
+      }
+
+      const unit = pathUnitById.get(row?.id);
+      callback(
+        unit
+          ? {
+              id: unit.id,
+              title: unit.title,
+              href: unit.href,
+              isCheckpoint: Boolean(unit.isCheckpoint)
+            }
+          : null
+      );
+    }
+  );
 }
 
 function validateUnitAccess(completedUnitId) {
@@ -79,6 +150,10 @@ function validateUnitAccess(completedUnitId) {
           SELECT 1
           FROM learning_units AS previous_unit
           WHERE previous_unit.unit_order < current_unit.unit_order
+            AND previous_unit.unit_order >= COALESCE(
+              (SELECT starting_unit_order FROM learning_preferences WHERE id = 1),
+              1
+            )
             AND NOT EXISTS (
               SELECT 1
               FROM user_unit_progress

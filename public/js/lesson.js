@@ -36,6 +36,7 @@ let selectedButton = null;
 let recognition = null;
 let wordTokens = [];
 let selectedWordTokenIds = [];
+let continueDestination = "/";
 
 const lessonTitle = document.getElementById("lessonTitle");
 const progressText = document.querySelector(".lesson-progress");
@@ -61,8 +62,13 @@ if (
 let selectedCategory = lessonCategorySelect?.value || "all";
 
 continueHomeBtn.addEventListener("click", () => {
-  window.location.href = "/";
+  window.location.href = continueDestination;
 });
+
+function configureLessonContinuation(nextUnit) {
+  continueDestination = nextUnit?.href || "/progress";
+  continueHomeBtn.textContent = nextUnit ? "Continue to next lesson" : "View final progress";
+}
 
 window.addEventListener("beforeunload", (event) => {
   if (!hasUnsavedLessonProgress()) {
@@ -652,6 +658,8 @@ async function finishLesson() {
   const requiredCorrectAnswers = Math.ceil(totalQuestions * 0.8);
 
   if (isCheckpoint && correctAnswers < requiredCorrectAnswers) {
+    continueDestination = "/";
+    continueHomeBtn.textContent = "Back to learning path";
     renderCheckpointRetry(requiredCorrectAnswers);
     continueHomeBtn.classList.remove("hidden");
     restartLessonBtn.classList.remove("hidden");
@@ -671,12 +679,15 @@ async function finishLesson() {
       })
     });
     const data = await response.json();
+    configureLessonContinuation(data.nextUnit);
     renderCompletionScreen(
       data.success ? `${data.streakDays} day` : "Not saved",
       data.success ? "Progress saved successfully." : "Progress could not be saved."
     );
   } catch (error) {
     console.error(error);
+    continueDestination = "/";
+    continueHomeBtn.textContent = "Back to learning path";
     renderCompletionScreen("Not saved", "Progress could not be saved.");
   }
 

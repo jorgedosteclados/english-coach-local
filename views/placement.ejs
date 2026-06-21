@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Level Check | English Coach Local</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="placement-page">
+  <main class="placement-shell">
+    <header class="placement-topbar">
+      <a href="/" aria-label="Back to learning path">×</a>
+      <div><span id="placementProgressBar"></span></div>
+      <strong id="placementProgressText">1 / <%= questions.length %></strong>
+    </header>
+
+    <section id="placementIntro" class="placement-card placement-intro">
+      <p class="placement-eyebrow">Evidence-informed diagnostic</p>
+      <h1>Find your starting level</h1>
+      <span>Answer 12 progressively harder questions. The result estimates your current A1–B2 range and recommends a learning phase.</span>
+      <ul>
+        <li>About 5 minutes</li>
+        <li>No AI and no XP involved</li>
+        <li>Your current path will not be changed</li>
+      </ul>
+      <button id="startPlacementBtn">Start level check</button>
+      <small>This is a learning diagnostic, not an official CEFR certification.</small>
+    </section>
+
+    <section id="placementQuestion" class="placement-card hidden" aria-live="polite">
+      <div class="placement-question-meta">
+        <span id="placementLevel">A1</span>
+        <span id="placementSkill">Meaning and comprehension</span>
+      </div>
+      <h1 id="placementPrompt"></h1>
+      <div id="placementOptions" class="placement-options"></div>
+      <button id="placementNextBtn" disabled>Continue</button>
+    </section>
+
+    <section id="placementResult" class="placement-card placement-result hidden" aria-live="polite">
+      <p class="placement-eyebrow">Estimated current range</p>
+      <div class="placement-level-result" id="placementLevelResult">A1</div>
+      <h1 id="placementResultTitle">Your recommended starting point</h1>
+      <p id="placementResultCopy"></p>
+      <div class="placement-result-score"><strong id="placementScore">0/12</strong><span>correct answers</span></div>
+      <div id="placementSkillResults" class="placement-skill-results"></div>
+      <div class="placement-result-actions">
+        <button id="applyPlacementBtn" class="apply-placement-btn">Start recommended phase</button>
+        <a href="/">Keep my current path</a>
+        <button id="restartPlacementBtn" class="secondary-btn">Take it again</button>
+      </div>
+      <p id="placementApplyStatus" class="placement-apply-status hidden" role="status"></p>
+      <small>Your result is an estimate based on this diagnostic, not an official CEFR certification.</small>
+    </section>
+  </main>
+
+  <script>window.placementQuestions = <%- questionsJson %>;</script>
+  <script src="/js/placement.js"></script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Progress | English Coach Local</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="progress-page">
+  <main class="progress-shell">
+    <header class="progress-heading">
+      <a href="/">← Back to learning path</a>
+      <p>Your learning data</p>
+      <h1>Progress &amp; mastery</h1>
+      <span>See what is improving and what deserves another short practice.</span>
+    </header>
+
+    <section class="progress-metrics" aria-label="Progress summary">
+      <article><strong><%= dashboard.progress.total_xp || 0 %></strong><span>Total XP</span></article>
+      <article><strong><%= dashboard.progress.lessons_completed || 0 %></strong><span>Activities</span></article>
+      <article><strong><%= dashboard.masteryAccuracy %>%</strong><span>Answer accuracy</span></article>
+      <article><strong><%= dashboard.questionsPracticed %></strong><span>Questions practiced</span></article>
+    </section>
+
+    <section class="progress-review-card <%= dashboard.dueReviewCount > 0 ? 'has-reviews' : '' %>">
+      <div>
+        <p>Adaptive review</p>
+        <h2><%= dashboard.dueReviewCount > 0 ? `${dashboard.dueReviewCount} review${dashboard.dueReviewCount === 1 ? '' : 's'} due` : 'You are caught up' %></h2>
+        <span><%= dashboard.dueReviewCount > 0 ? 'Practice the phrases that need attention while they are fresh.' : 'New mistakes will appear here at the right time.' %></span>
+      </div>
+      <a href="/mistakes"><%= dashboard.dueReviewCount > 0 ? 'Review now' : 'Open review' %></a>
+    </section>
+
+    <section class="progress-placement-card">
+      <div>
+        <p>Level diagnostic</p>
+        <% if (dashboard.placement) { %>
+          <h2>Estimated <%= dashboard.placement.cefr_level %> · Phase <%= dashboard.placement.recommended_phase %></h2>
+          <span><%= dashboard.placement.score %>/<%= dashboard.placement.total_questions %> correct on your latest level check.</span>
+        <% } else { %>
+          <h2>Find your starting level</h2>
+          <span>Take a short A1–B2 diagnostic without changing your current path.</span>
+        <% } %>
+      </div>
+      <a href="/placement"><%= dashboard.placement ? 'Retake test' : 'Check my level' %></a>
+    </section>
+
+    <section class="progress-panel">
+      <div class="progress-panel-heading">
+        <div><p>Learning path</p><h2>Phase progress</h2></div>
+        <a href="/">Continue path</a>
+      </div>
+      <div class="progress-phase-grid">
+        <% dashboard.phases.forEach((phase) => { %>
+          <article>
+            <div><span>Phase <%= phase.id %></span><strong><%= phase.percent %>%</strong></div>
+            <h3><%= phase.title %></h3>
+            <div class="progress-track"><span style="width: <%= phase.percent %>%"></span></div>
+            <small><%= phase.completed %> of <%= phase.total %> steps · <%= phase.checkpointComplete ? 'Checkpoint passed' : 'Checkpoint pending' %></small>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <div class="progress-two-column">
+      <section class="progress-panel">
+        <div class="progress-panel-heading"><div><p>Last 7 days</p><h2>Weekly activity</h2></div></div>
+        <% const maxDailyXp = Math.max(1, ...dashboard.weekly.map((day) => day.xp)); %>
+        <div class="progress-weekly-chart" aria-label="XP earned during the last seven days">
+          <% dashboard.weekly.forEach((day) => { %>
+            <div title="<%= day.xp %> XP, <%= day.activities %> activities">
+              <strong><%= day.xp > 0 ? day.xp : '' %></strong>
+              <span><i style="height: <%= Math.max(day.xp > 0 ? 12 : 4, Math.round((day.xp / maxDailyXp) * 100)) %>%"></i></span>
+              <small><%= day.label %></small>
+            </div>
+          <% }) %>
+        </div>
+      </section>
+
+      <section class="progress-panel">
+        <div class="progress-panel-heading"><div><p>Mastery</p><h2>By lesson category</h2></div></div>
+        <% if (dashboard.categories.length === 0) { %>
+          <p class="progress-empty">Complete lesson questions to build your mastery profile.</p>
+        <% } else { %>
+          <div class="progress-category-list">
+            <% dashboard.categories.forEach((category) => { %>
+              <div>
+                <header><strong><%= category.label %></strong><span><%= category.accuracy %>%</span></header>
+                <div class="progress-track"><span style="width: <%= category.accuracy %>%"></span></div>
+                <small><%= category.correct + category.wrong %> answers across <%= category.practiced %> questions</small>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+    </div>
+
+    <section class="progress-panel">
+      <div class="progress-panel-heading"><div><p>Focus area</p><h2>Phrases to strengthen</h2></div><a href="/mistakes">Practice mistakes</a></div>
+      <% if (dashboard.weakQuestions.length === 0) { %>
+        <p class="progress-empty">No weak phrases yet. Keep following the path and this list will adapt to your answers.</p>
+      <% } else { %>
+        <div class="progress-weak-list">
+          <% dashboard.weakQuestions.forEach((question) => { %>
+            <article>
+              <div><strong><%= question.question_pt %></strong><span><%= question.correct_answer %></span></div>
+              <small><b><%= question.total_wrong %></b> mistakes · <%= question.total_correct %> correct reviews</small>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <footer class="progress-footer"><a href="/history">View correction history</a><a href="/">Return to learning path</a></footer>
+  </main>
+</body>
+</html>

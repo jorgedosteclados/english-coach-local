@@ -17,7 +17,14 @@ const {
   getSpeakingPrompts
 } = require("./data/unitContent");
 const { getDueMistakes } = require("./services/reviewService");
-const PORT = 3000;
+const { getDashboardData, getDueReviewCount } = require("./services/dashboardService");
+const {
+  applyPlacementRecommendation,
+  getPublicQuestions,
+  submitPlacement
+} = require("./services/placementService");
+const { skillMatrix, levelMatrix } = require("./data/pedagogy");
+const PORT = Number(process.env.PORT) || 3000;
 
 const learningPathMetadata = new Map(learningPathUnits.map((unit) => [unit.id, unit]));
 
@@ -47,9 +54,10 @@ function buildPathState(rows) {
 
   const units = rows.map((unit) => {
     const isCompleted = unit.status === "completed";
-    const isLocked = Boolean(unit.is_locked_default) || !previousCompleted;
+    const isPlacementSkipped = !isCompleted && unit.unit_order < Number(unit.placement_start_order || 1);
+    const isLocked = isPlacementSkipped || Boolean(unit.is_locked_default) || !previousCompleted;
 
-    previousCompleted = isCompleted;
+    previousCompleted = isCompleted || isPlacementSkipped;
 
     return {
       ...unit,
@@ -58,6 +66,7 @@ function buildPathState(rows) {
       sectionDescription: learningPathMetadata.get(unit.id)?.sectionDescription || "",
       isCheckpoint: Boolean(learningPathMetadata.get(unit.id)?.isCheckpoint),
       isCompleted,
+      isPlacementSkipped,
       isLocked,
       completedCount: unit.completed_count || 0,
       lastCompletedAt: unit.last_completed_at || null
@@ -93,6 +102,8 @@ function loadLearningPath(callback) {
     `
     SELECT
       learning_units.*,
+      COALESCE((SELECT starting_unit_order FROM learning_preferences WHERE id = 1), 1)
+        AS placement_start_order,
       user_unit_progress.status,
       user_unit_progress.completed_count,
       user_unit_progress.last_completed_at
@@ -127,11 +138,21 @@ app.get("/", (req, res) => {
         console.error("Error loading learning path:", pathError.message);
       }
 
-      res.render("home", {
-        progress: selectedProgress,
-        pathState: pathState || buildPathState([]),
-        achievements: buildAchievements(selectedProgress, (pathState || buildPathState([])).units)
-      });
+      const selectedPathState = pathState || buildPathState([]);
+
+      getDueReviewCount()
+        .catch((reviewError) => {
+          console.error("Error loading due review count:", reviewError.message);
+          return 0;
+        })
+        .then((dueReviewCount) => {
+          res.render("home", {
+            progress: selectedProgress,
+            pathState: selectedPathState,
+            achievements: buildAchievements(selectedProgress, selectedPathState.units),
+            dueReviewCount
+          });
+        });
     });
   });
 });
@@ -161,6 +182,54 @@ app.get("/mistakes", async (req, res) => {
   } catch (error) {
     console.error("Error loading mistakes:", error.message);
     res.render("mistakes", { questions: [], questionsJson: "[]" });
+  }
+});
+
+app.get("/progress", async (req, res) => {
+  try {
+    res.render("progress", { dashboard: await getDashboardData() });
+  } catch (error) {
+    console.error("Error loading progress dashboard:", error.message);
+    res.status(500).send("Unable to load progress right now.");
+  }
+});
+
+app.get("/placement", (req, res) => {
+  const questions = getPublicQuestions();
+  res.render("placement", {
+    questions,
+    questionsJson: JSON.stringify(questions).replace(/</g, "\\u003c"),
+    skillMatrix,
+    levelMatrix
+  });
+});
+
+app.post("/placement/submit", async (req, res) => {
+  const questions = getPublicQuestions();
+  const answers = req.body?.answers;
+  const hasEveryAnswer =
+    answers && questions.every((question) => question.options.includes(answers[question.id]));
+
+  if (!hasEveryAnswer) {
+    res.status(400).json({ error: "Answer every placement question before submitting." });
+    return;
+  }
+
+  try {
+    res.json(await submitPlacement(answers));
+  } catch (error) {
+    console.error("Error saving placement assessment:", error.message);
+    res.status(500).json({ error: "Unable to save the placement result." });
+  }
+});
+
+app.post("/placement/apply", async (req, res) => {
+  try {
+    res.json(await applyPlacementRecommendation(req.body?.assessmentId));
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      error: error.statusCode ? error.message : "Unable to apply the placement recommendation."
+    });
   }
 });
 

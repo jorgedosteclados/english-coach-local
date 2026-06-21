@@ -109,7 +109,8 @@ async function saveMissionProgress() {
     if (data.success) {
       return {
         streakDays: data.streakDays,
-        saved: true
+        saved: true,
+        nextUnit: data.nextUnit || null
       };
     }
   } catch (error) {
@@ -118,7 +119,8 @@ async function saveMissionProgress() {
 
   return {
     streakDays: null,
-    saved: false
+    saved: false,
+    nextUnit: null
   };
 }
 
@@ -127,6 +129,8 @@ function renderMissionComplete(feedback, progress) {
   localStorage.removeItem(writingDraftKey);
   writingForm.classList.add("hidden");
   const streakText = progress && progress.streakDays ? `${progress.streakDays} day` : "Saved";
+  const nextHref = progress?.nextUnit?.href || "/progress";
+  const continueLabel = progress?.nextUnit ? "Continue to next lesson" : "View final progress";
 
   writingResultContent.innerHTML = `
     <div class="lesson-complete writing-complete">
@@ -151,7 +155,8 @@ function renderMissionComplete(feedback, progress) {
 
       ${renderStructuredFeedback(feedback)}
 
-      <a href="/" class="primary-link continue-mission-link">Continue</a>
+      <a href="${nextHref}" class="primary-link continue-mission-link">${continueLabel}</a>
+      <a href="/" class="secondary-link">Back to learning path</a>
       <button type="button" class="secondary-btn" id="startWritingAgainBtn">Start Again</button>
     </div>
   `;

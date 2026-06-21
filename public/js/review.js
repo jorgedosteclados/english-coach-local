@@ -176,6 +176,7 @@ async function finishReview() {
         </div>
       </div>
       <p class="save-status">Saving progress...</p>
+      <div class="review-complete-actions"></div>
     </div>
   `;
 
@@ -199,9 +200,18 @@ async function finishReview() {
     saveStatus.textContent = data.success
       ? "Progress saved successfully."
       : "Progress could not be saved.";
+    const nextHref = data.nextUnit?.href || "/progress";
+    const continueLabel = data.nextUnit ? "Continue to next lesson" : "View final progress";
+    reviewResultContent.querySelector(".review-complete-actions").innerHTML = `
+      <a href="${nextHref}" class="primary-link">${continueLabel}</a>
+      <a href="/" class="secondary-link">Back to learning path</a>
+    `;
   } catch (error) {
     console.error(error);
     reviewResultContent.querySelector(".save-status").textContent = "Progress could not be saved.";
+    reviewResultContent.querySelector(".review-complete-actions").innerHTML = `
+      <a href="/" class="primary-link">Back to learning path</a>
+    `;
   }
 }
 

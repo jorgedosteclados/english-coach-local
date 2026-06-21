@@ -2,14 +2,17 @@ const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const http = require("node:http");
+const os = require("node:os");
 const path = require("node:path");
 const { chromium } = require("@playwright/test");
 const sqlite3 = require("sqlite3").verbose();
+const placementQuestions = require("../data/placementQuestions");
 
 const rootDir = path.resolve(__dirname, "..");
-const baseURL = "http://127.0.0.1:3000";
-const dbPath = path.join(rootDir, "english_coach.db");
-const backupPath = path.join(rootDir, "english_coach.e2e-backup.db");
+const testPort = 3100;
+const baseURL = `http://127.0.0.1:${testPort}`;
+const sourceDbPath = path.join(rootDir, "english_coach.db");
+const dbPath = path.join(os.tmpdir(), `english-coach-e2e-${process.pid}.db`);
 const headed = process.env.PLAYWRIGHT_HEADED === "1";
 const visualDelay = headed ? 1200 : 0;
 
@@ -81,6 +84,7 @@ async function main() {
 
   try {
     await run(results, "home and learning path render", async () => {
+      await clearLearningPreference();
       await seedUserProgress({
         totalXp: 80,
         activitiesCompleted: 3,
@@ -122,6 +126,66 @@ async function main() {
       await page.waitForURL(`${baseURL}/`);
       await expectVisibleText(page, "Support Foundations");
       await pause();
+      await page.close();
+    });
+
+    await run(results, "placement diagnostic estimates and saves a level", async () => {
+      const page = await newPage(browser);
+      const invalidResponse = await page.request.post(`${baseURL}/placement/submit`, {
+        data: { answers: {} }
+      });
+      assert.equal(invalidResponse.status(), 400);
+
+      await page.goto(`${baseURL}/placement`);
+      await expectVisibleText(page, "Find your starting level");
+      const correctPositions = await page.evaluate(
+        (correctAnswers) =>
+          window.placementQuestions.map((question, index) =>
+            question.options.indexOf(correctAnswers[index])
+          ),
+        placementQuestions.map((question) => question.correctAnswer)
+      );
+      assert.deepEqual(
+        [0, 1, 2, 3].map(
+          (position) => correctPositions.filter((answerPosition) => answerPosition === position).length
+        ),
+        [3, 3, 3, 3]
+      );
+      await page.getByRole("button", { name: "Start level check" }).click();
+
+      for (let index = 0; index < 12; index++) {
+        await page
+          .getByRole("button", { name: placementQuestions[index].correctAnswer, exact: true })
+          .click();
+        await page.getByRole("button", { name: index === 11 ? "See my result" : "Continue" }).click();
+      }
+
+      await expectVisibleText(page, "Estimated current range");
+      await expectVisibleText(page, "Start around Phase 4");
+      await expectVisibleText(page, "12/12");
+      await page
+        .locator("#placementResult")
+        .getByText("not an official CEFR certification", { exact: false })
+        .waitFor({ state: "visible" });
+
+      await page.goto(`${baseURL}/progress`);
+      await expectVisibleText(page, "Estimated B2 · Phase 4");
+      await expectVisibleText(page, "12/12 correct on your latest level check");
+
+      await page.goto(`${baseURL}/placement`);
+      await page.getByRole("button", { name: "Start level check" }).click();
+      for (let index = 0; index < placementQuestions.length; index++) {
+        await page
+          .getByRole("button", { name: placementQuestions[index].correctAnswer, exact: true })
+          .click();
+        await page.getByRole("button", { name: index === 11 ? "See my result" : "Continue" }).click();
+      }
+      await page.getByRole("button", { name: "Start Phase 4" }).click();
+      await page.waitForURL("**/lesson?unit=16&category=tone");
+      await page.goto(baseURL);
+      assert.equal(await page.locator(".coach-step.placement-skipped").count(), 15);
+      await expectVisibleText(page, "3 of 24 units completed");
+      await clearLearningPreference();
       await page.close();
     });
 
@@ -175,7 +239,8 @@ async function main() {
             correctAdded: 5,
             wrongAdded: 0,
             streakDays: 3,
-            unitProgress: { unitId: 6, status: "completed" }
+            unitProgress: { unitId: 6, status: "completed" },
+            nextUnit: { id: 7, title: "Troubleshooting", href: "/lesson?unit=7&category=troubleshooting" }
           }
         });
       });
@@ -238,6 +303,8 @@ async function main() {
       await expectVisibleText(page, "Lesson complete!");
       await expectVisibleText(page, "Progress saved successfully.");
       await expectVisibleText(page, "XP earned");
+      await page.getByRole("button", { name: "Continue to next lesson" }).click();
+      await page.waitForURL("**/lesson?unit=7&category=troubleshooting");
       assert.ok(requestedCategories.includes("request-info"));
       assert.equal(savedAttempts.length, 5);
       assert.deepEqual(
@@ -264,6 +331,24 @@ async function main() {
         });
         assert.equal(wrongResponse.status(), 200);
       }
+
+      const activityResponse = await page.request.post(`${baseURL}/ai/save-lesson-progress`, {
+        data: {
+          xpEarned: 12,
+          correctAnswers: 1,
+          wrongAnswers: 0,
+          unitId: null
+        }
+      });
+      assert.equal(activityResponse.status(), 200);
+      const activityData = await activityResponse.json();
+      assert.equal(activityData.nextUnit.href, "/conversation?unit=4");
+
+      await page.goto(`${baseURL}/progress`);
+      await expectVisibleText(page, "Progress & mastery");
+      await expectVisibleText(page, "1 review due");
+      await expectVisibleText(page, reviewQuestion.questionPt);
+      await expectVisibleText(page, "12");
 
       await page.goto(`${baseURL}/mistakes`);
       await expectVisibleText(page, "Review your mistakes");
@@ -417,7 +502,8 @@ async function main() {
           json: {
             success: true,
             streakDays: 4,
-            unitProgress: { unitId: body.unitId, status: "completed" }
+            unitProgress: { unitId: body.unitId, status: "completed" },
+            nextUnit: { id: 9, title: "Difficult Customer", href: "/conversation?unit=9" }
           }
         });
       });
@@ -430,7 +516,10 @@ async function main() {
       await page.getByRole("button", { name: "Check My Writing" }).click();
       await expectVisibleText(page, "Mission complete!");
       await expectVisibleText(page, "Could you please share more details?");
-      assert.equal(await page.getByRole("link", { name: "Continue" }).getAttribute("href"), "/");
+      assert.equal(
+        await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
+        "/conversation?unit=9"
+      );
       await pause();
       await page.close();
     });
@@ -459,7 +548,8 @@ async function main() {
           json: {
             success: true,
             streakDays: 5,
-            unitProgress: { unitId: 3, status: "completed" }
+            unitProgress: { unitId: 3, status: "completed" },
+            nextUnit: { id: 4, title: "Customer Conversation", href: "/conversation?unit=4" }
           }
         });
       });
@@ -474,6 +564,10 @@ async function main() {
       await page.getByRole("button", { name: "Correct" }).click();
       await expectVisibleText(page, "Feedback complete!");
       await expectVisibleText(page, "I have a question.");
+      assert.equal(
+        await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
+        "/conversation?unit=4"
+      );
       await page.getByRole("button", { name: "Start Again" }).waitFor();
       await pause();
       await page.close();
@@ -537,7 +631,8 @@ async function main() {
           json: {
             success: true,
             streakDays: 6,
-            unitProgress: { unitId: 15, status: "completed" }
+            unitProgress: { unitId: 15, status: "completed" },
+            nextUnit: { id: 16, title: "Professional Tone", href: "/lesson?unit=16&category=tone" }
           }
         });
       });
@@ -562,6 +657,10 @@ async function main() {
       await expectVisibleText(page, "Conversation complete!");
       await expectVisibleText(page, "Thank you for the details. I will investigate this issue");
       await expectVisibleText(page, "XP earned");
+      assert.equal(
+        await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
+        "/lesson?unit=16&category=tone"
+      );
       await pause();
       await page.close();
     });
@@ -617,7 +716,8 @@ async function main() {
           json: {
             success: true,
             streakDays: 7,
-            unitProgress: { unitId: 19, status: "completed" }
+            unitProgress: { unitId: 19, status: "completed" },
+            nextUnit: { id: 20, title: "Final Support Simulation", href: "/conversation?unit=20" }
           }
         });
       });
@@ -650,7 +750,10 @@ async function main() {
       await page.getByRole("button", { name: "I Practiced This" }).click();
       await expectVisibleText(page, "Speaking complete!");
       await expectVisibleText(page, "Progress saved successfully.");
-      assert.equal(await page.getByRole("link", { name: "Continue path" }).getAttribute("href"), "/");
+      assert.equal(
+        await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
+        "/conversation?unit=20"
+      );
       await page.getByRole("button", { name: "Practice again" }).waitFor();
       assert.equal(await page.locator("#speakingCard").isHidden(), true);
       await pause();
@@ -672,7 +775,8 @@ async function main() {
           json: {
             success: true,
             streakDays: 8,
-            unitProgress: null
+            unitProgress: null,
+            nextUnit: { id: 4, title: "Customer Conversation", href: "/conversation?unit=4" }
           }
         });
       });
@@ -696,6 +800,10 @@ async function main() {
 
       await expectVisibleText(page, "Review complete!");
       await expectVisibleText(page, "Progress saved successfully.");
+      assert.equal(
+        await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
+        "/conversation?unit=4"
+      );
       await pause();
       await page.close();
     });
@@ -766,11 +874,11 @@ function pause() {
 }
 
 function startServer() {
-  backupDatabase();
+  prepareTestDatabase();
 
   const server = spawn(process.execPath, ["app.js"], {
     cwd: rootDir,
-    env: process.env,
+    env: { ...process.env, PORT: String(testPort), DATABASE_PATH: dbPath },
     stdio: "ignore",
     windowsHide: true
   });
@@ -778,16 +886,21 @@ function startServer() {
   return waitForServer().then(() => server);
 }
 
-function backupDatabase() {
-  if (fs.existsSync(dbPath)) {
-    fs.copyFileSync(dbPath, backupPath);
-  }
+function prepareTestDatabase() {
+  cleanupTestDatabase();
+  fs.copyFileSync(sourceDbPath, dbPath);
 }
 
 function restoreDatabase() {
-  if (fs.existsSync(backupPath)) {
-    fs.copyFileSync(backupPath, dbPath);
-    fs.unlinkSync(backupPath);
+  cleanupTestDatabase();
+}
+
+function cleanupTestDatabase() {
+  for (const suffix of ["", "-shm", "-wal"]) {
+    const filePath = `${dbPath}${suffix}`;
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
   }
 }
 
@@ -964,6 +1077,17 @@ function seedUserProgress({ totalXp, activitiesCompleted, streakDays }) {
         resolve();
       }
     );
+  });
+}
+
+function clearLearningPreference() {
+  return new Promise((resolve, reject) => {
+    const db = new sqlite3.Database(dbPath);
+    db.run("DELETE FROM learning_preferences", (error) => {
+      db.close();
+      if (error) return reject(error);
+      resolve();
+    });
   });
 }
 

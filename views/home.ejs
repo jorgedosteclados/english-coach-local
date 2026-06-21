@@ -16,9 +16,11 @@
 
       <nav aria-label="Main navigation">
         <a href="/" class="active"><span>1</span>Learn</a>
-        <a href="/mistakes"><span>M</span>Mistakes</a>
+        <a href="/mistakes"><span>M</span>Mistakes<% if (dueReviewCount > 0) { %><b class="coach-nav-count"><%= dueReviewCount %></b><% } %></a>
         <a href="/writing"><span>W</span>Writing</a>
         <a href="/conversation"><span>C</span>Conversation</a>
+        <a href="/progress"><span>P</span>Progress</a>
+        <a href="/placement"><span>L</span>Level test</a>
         <a href="/history"><span>H</span>History</a>
       </nav>
     </aside>
@@ -55,15 +57,15 @@
             </div>
           <% } %>
           <div
-            class="coach-step step-<%= ['left', 'center', 'right'][index % 3] %> <%= unit.isCheckpoint ? 'checkpoint' : '' %> <%= unit.isCompleted ? 'completed' : '' %> <%= unit.isLocked ? 'locked' : 'available' %>"
+            class="coach-step step-<%= ['left', 'center', 'right'][index % 3] %> <%= unit.isCheckpoint ? 'checkpoint' : '' %> <%= unit.isCompleted ? 'completed' : '' %> <%= unit.isPlacementSkipped ? 'placement-skipped' : '' %> <%= unit.isLocked ? 'locked' : 'available' %>"
             <% if (!unit.isLocked && unit.href) { %>role="button" tabindex="0"<% } %>
           >
             <span class="coach-step-node">
-              <%= unit.isCompleted ? '✓' : unit.isLocked ? 'L' : unit.isCheckpoint ? 'C' : unit.unit_order %>
+              <%= unit.isCompleted ? '✓' : unit.isPlacementSkipped ? 'S' : unit.isLocked ? 'L' : unit.isCheckpoint ? 'C' : unit.unit_order %>
             </span>
             <strong><%= unit.title %></strong>
             <small>
-              <%= unit.isCompleted ? 'Practice again' : unit.isLocked ? 'Complete the previous step' : 'Start this step' %>
+              <%= unit.isCompleted ? 'Practice again' : unit.isPlacementSkipped ? 'Skipped by level check' : unit.isLocked ? 'Complete the previous step' : 'Start this step' %>
             </small>
             <% if (!unit.isLocked && unit.href) { %>
               <span class="coach-step-detail" aria-hidden="true">
@@ -105,6 +107,13 @@
         <a href="/lesson">Practice now</a>
       </section>
 
+      <section class="coach-side-card coach-level-card">
+        <p class="coach-side-label">Personalize your path</p>
+        <h2>Check your English level</h2>
+        <p>Take a short A1–B2 diagnostic and see your recommended phase.</p>
+        <a href="/placement">Start level test</a>
+      </section>
+
       <% const unlockedAchievements = achievements.filter((achievement) => achievement.unlocked); %>
       <section class="coach-side-card">
         <div class="coach-side-heading">
@@ -123,7 +132,7 @@
 
       <section class="coach-side-card coach-tools-card">
         <p class="coach-side-label">Quick practice</p>
-        <a href="/mistakes"><span>M</span><div><strong>Review mistakes</strong><small>Practice weak phrases</small></div></a>
+        <a href="/mistakes"><span>M</span><div><strong>Review mistakes</strong><small><%= dueReviewCount > 0 ? `${dueReviewCount} review${dueReviewCount === 1 ? '' : 's'} due` : 'No reviews due' %></small></div></a>
         <a href="/speaking"><span>S</span><div><strong>Speaking</strong><small>Pronunciation practice</small></div></a>
         <a href="/correct"><span>C</span><div><strong>Correct my English</strong><small>Get AI feedback</small></div></a>
       </section>
@@ -135,7 +144,7 @@
     <a href="/mistakes"><span>M</span>Mistakes</a>
     <a href="/writing"><span>W</span>Write</a>
     <a href="/conversation"><span>C</span>Talk</a>
-    <a href="/history"><span>H</span>History</a>
+    <a href="/progress"><span>P</span>Progress</a>
   </nav>
   <script src="/js/home.js"></script>
 </body>

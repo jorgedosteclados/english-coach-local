@@ -316,6 +316,9 @@ async function saveSpeakingProgress() {
       throw new Error("Progress was not saved.");
     }
 
+    const nextHref = data.nextUnit?.href || "/progress";
+    const continueLabel = data.nextUnit ? "Continue to next lesson" : "View final progress";
+
     speakingResultContent.innerHTML = `
       <div class="lesson-complete">
         <div class="success-badge">✓</div>
@@ -333,7 +336,8 @@ async function saveSpeakingProgress() {
         </div>
         <p class="save-status">Progress saved successfully.</p>
         <div class="speaking-complete-actions">
-          <a href="/" class="primary-link">Continue path</a>
+          <a href="${nextHref}" class="primary-link">${continueLabel}</a>
+          <a href="/" class="secondary-link">Back to learning path</a>
           <button type="button" class="secondary-btn" id="practiceSpeakingAgainBtn">Practice again</button>
         </div>
       </div>

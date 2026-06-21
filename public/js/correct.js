@@ -106,7 +106,8 @@ async function saveCorrectionProgress() {
     if (data.success) {
       return {
         streakDays: data.streakDays,
-        saved: true
+        saved: true,
+        nextUnit: data.nextUnit || null
       };
     }
   } catch (error) {
@@ -115,7 +116,8 @@ async function saveCorrectionProgress() {
 
   return {
     streakDays: null,
-    saved: false
+    saved: false,
+    nextUnit: null
   };
 }
 
@@ -124,6 +126,8 @@ function renderCorrectionComplete(feedback, progress) {
   localStorage.removeItem(correctionDraftKey);
   correctForm.classList.add("hidden");
   const streakText = progress && progress.streakDays ? `${progress.streakDays} day` : "Saved";
+  const nextHref = progress?.nextUnit?.href || "/progress";
+  const continueLabel = progress?.nextUnit ? "Continue to next lesson" : "View final progress";
 
   resultContent.innerHTML = `
     <div class="lesson-complete writing-complete">
@@ -144,7 +148,8 @@ function renderCorrectionComplete(feedback, progress) {
 
       ${renderStructuredFeedback(feedback)}
 
-      <a href="/" class="primary-link continue-mission-link">Continue</a>
+      <a href="${nextHref}" class="primary-link continue-mission-link">${continueLabel}</a>
+      <a href="/" class="secondary-link">Back to learning path</a>
       <button type="button" class="secondary-btn" id="startCorrectionAgainBtn">Start Again</button>
     </div>
   `;

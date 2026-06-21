@@ -76,6 +76,55 @@ test("home and learning path render the main navigation", async ({ page }) => {
   await expect(page.getByText(/Phase \d of 4/)).toBeVisible();
 });
 
+test("placement diagnostic completes and returns an estimated level", async ({ page }) => {
+  await page.route("**/placement/submit", async (route) => {
+    const body = route.request().postDataJSON();
+    expect(Object.keys(body.answers)).toHaveLength(12);
+    await route.fulfill({
+      json: {
+        totalCorrect: 12,
+        totalQuestions: 12,
+        assessmentId: 42,
+        estimatedLevel: "B2",
+        recommendedPhase: 4,
+        objective: "Manage nuanced professional interactions.",
+        skills: [
+          { label: "Meaning and comprehension", correct: 3, total: 3, percent: 100 },
+          { label: "Grammar and structure", correct: 3, total: 3, percent: 100 }
+        ]
+      }
+    });
+  });
+
+  await page.route("**/placement/apply", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ assessmentId: 42 });
+    await route.fulfill({
+      json: { success: true, recommendedPhase: 4, startHref: "/lesson?unit=16&category=tone" }
+    });
+  });
+
+  await page.goto("/placement");
+  if (process.env.CAPTURE_PLACEMENT === "1") {
+    await page.screenshot({ path: "/tmp/placement-desktop.png", fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: "/tmp/placement-mobile.png", fullPage: true });
+  }
+  await page.getByRole("button", { name: "Start level check" }).click();
+  for (let index = 0; index < 12; index++) {
+    const optionCount = await page.locator(".placement-option").count();
+    await page.locator(".placement-option").nth(index % optionCount).click();
+    await page.getByRole("button", { name: index === 11 ? "See my result" : "Continue" }).click();
+  }
+
+  await expect(page.getByText("Start around Phase 4")).toBeVisible();
+  await expect(page.getByText("12/12")).toBeVisible();
+  await expect(
+    page.locator("#placementResult").getByText(/not an official CEFR certification/)
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Start Phase 4" }).click();
+  await expect(page).toHaveURL(/\/lesson\?unit=16&category=tone$/);
+});
+
 test("lesson can be completed from question to saved progress", async ({ page }) => {
   let questionIndex = 0;
 
@@ -102,7 +151,8 @@ test("lesson can be completed from question to saved progress", async ({ page })
         correctAdded: 5,
         wrongAdded: 0,
         streakDays: 3,
-        unitProgress: { unitId: 1, status: "completed" }
+        unitProgress: { unitId: 1, status: "completed" },
+        nextUnit: { id: 2, title: "Ask for Details", href: "/writing?unit=2" }
       }
     });
   });
@@ -142,6 +192,7 @@ test("lesson can be completed from question to saved progress", async ({ page })
   await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
   await expect(page.getByText("Progress saved successfully.")).toBeVisible();
   await expect(page.locator(".completion-stats").getByText("50", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue to next lesson" })).toBeVisible();
 });
 
 test("writing mission submits text and shows feedback completion", async ({ page }) => {
@@ -164,7 +215,8 @@ test("writing mission submits text and shows feedback completion", async ({ page
       json: {
         success: true,
         streakDays: 4,
-        unitProgress: { unitId: body.unitId, status: "completed" }
+        unitProgress: { unitId: body.unitId, status: "completed" },
+        nextUnit: { id: 3, title: "Correct and Improve", href: "/correct?unit=3" }
       }
     });
   });
@@ -175,7 +227,10 @@ test("writing mission submits text and shows feedback completion", async ({ page
 
   await expect(page.getByRole("heading", { name: "Mission complete!" })).toBeVisible();
   await expect(page.getByText("Could you please share more details?")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Continue" })).toHaveAttribute("href", "/");
+  await expect(page.getByRole("link", { name: "Continue to next lesson" })).toHaveAttribute(
+    "href",
+    "/correct?unit=3"
+  );
 });
 
 test("correction page validates empty input and shows AI feedback", async ({ page }) => {
@@ -198,7 +253,8 @@ test("correction page validates empty input and shows AI feedback", async ({ pag
       json: {
         success: true,
         streakDays: 5,
-        unitProgress: { unitId: 3, status: "completed" }
+        unitProgress: { unitId: 3, status: "completed" },
+        nextUnit: { id: 4, title: "Customer Conversation", href: "/conversation?unit=4" }
       }
     });
   });
@@ -211,5 +267,9 @@ test("correction page validates empty input and shows AI feedback", async ({ pag
 
   await expect(page.getByRole("heading", { name: "Feedback complete!" })).toBeVisible();
   await expect(page.getByText("I have a question.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continue to next lesson" })).toHaveAttribute(
+    "href",
+    "/conversation?unit=4"
+  );
   await expect(page.getByRole("button", { name: "Start Again" })).toBeVisible();
 });

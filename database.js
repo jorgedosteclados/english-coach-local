@@ -3,7 +3,8 @@ const seedLessonQuestions = require("./data/seedLessonQuestions");
 const csvLessonQuestions = require("./data/csvLessonQuestions");
 const { learningPathUnits } = require("./data/learningPath");
 
-const db = new sqlite3.Database("./english_coach.db", (err) => {
+const databasePath = process.env.DATABASE_PATH || "./english_coach.db";
+const db = new sqlite3.Database(databasePath, (err) => {
   if (err) {
     console.error("Error opening database:", err.message);
   } else {
@@ -31,6 +32,42 @@ db.run(`
     streak_days INTEGER DEFAULT 0,
     last_study_date TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS activity_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    unit_id INTEGER,
+    activity_type TEXT DEFAULT 'practice',
+    xp_earned INTEGER DEFAULT 0,
+    correct_answers INTEGER DEFAULT 0,
+    wrong_answers INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (unit_id) REFERENCES learning_units(id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS placement_assessments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    score INTEGER NOT NULL,
+    total_questions INTEGER NOT NULL,
+    cefr_level TEXT NOT NULL,
+    recommended_phase INTEGER NOT NULL,
+    result_json TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS learning_preferences (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    placement_assessment_id INTEGER,
+    starting_unit_order INTEGER NOT NULL DEFAULT 1,
+    recommended_phase INTEGER NOT NULL DEFAULT 1,
+    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (placement_assessment_id) REFERENCES placement_assessments(id)
   )
 `);
 
