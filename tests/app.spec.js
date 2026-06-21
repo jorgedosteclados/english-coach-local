@@ -127,6 +127,7 @@ test("placement diagnostic completes and returns an estimated level", async ({ p
 
 test("lesson can be completed from question to saved progress", async ({ page }) => {
   let questionIndex = 0;
+  const correctOptionPositions = [];
 
   await page.route("**/ai/generate-lesson-question", async (route) => {
     const question = mockQuestions[questionIndex] || mockQuestions[mockQuestions.length - 1];
@@ -162,6 +163,8 @@ test("lesson can be completed from question to saved progress", async ({ page })
   for (const [questionIndex, question] of mockQuestions.entries()) {
     if (questionIndex === 0 || questionIndex === 4) {
       await expect(page.getByText(question.questionPt)).toBeVisible();
+      const optionTexts = await page.locator(".option-btn").allTextContents();
+      correctOptionPositions.push(optionTexts.indexOf(question.correctAnswer));
       await page.getByRole("button", { name: question.correctAnswer }).click();
     } else if (questionIndex === 1) {
       await expect(page.getByText("Listen and build the phrase")).toBeVisible();
@@ -193,6 +196,7 @@ test("lesson can be completed from question to saved progress", async ({ page })
   await expect(page.getByText("Progress saved successfully.")).toBeVisible();
   await expect(page.locator(".completion-stats").getByText("50", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Continue to next lesson" })).toBeVisible();
+  expect(new Set(correctOptionPositions).size).toBe(2);
 });
 
 test("writing mission submits text and shows feedback completion", async ({ page }) => {

@@ -22,6 +22,10 @@ const exerciseTypes = [
   "listen-build",
   "multiple-choice"
 ];
+const multipleChoiceQuestionNumbers = exerciseTypes
+  .slice(0, totalQuestions)
+  .map((type, index) => (type === "multiple-choice" ? index + 1 : null))
+  .filter(Boolean);
 
 let currentQuestion = null;
 let questionNumber = 1;
@@ -37,6 +41,7 @@ let recognition = null;
 let wordTokens = [];
 let selectedWordTokenIds = [];
 let continueDestination = "/";
+let multipleChoiceAnswerPositions = buildAnswerPositions(multipleChoiceQuestionNumbers.length);
 
 const lessonTitle = document.getElementById("lessonTitle");
 const progressText = document.querySelector(".lesson-progress");
@@ -304,8 +309,15 @@ function renderQuestion(question, restoredAnswer = "") {
 function renderMultipleChoice(question, restoredAnswer) {
   lessonTitle.textContent = "How do you say this in English?";
   questionText.textContent = question.questionPt || question.question;
+  const multipleChoiceIndex = multipleChoiceQuestionNumbers.indexOf(questionNumber);
+  const targetPosition = multipleChoiceAnswerPositions[multipleChoiceIndex] ?? 0;
+  const distractors = shuffleValues(
+    question.options.filter((option) => option !== question.correctAnswer)
+  );
+  const displayedOptions = [...distractors];
+  displayedOptions.splice(targetPosition, 0, question.correctAnswer);
 
-  question.options.forEach((option) => {
+  displayedOptions.forEach((option) => {
     const button = document.createElement("button");
     button.className = "option-btn";
     button.textContent = option;
@@ -319,6 +331,27 @@ function renderMultipleChoice(question, restoredAnswer) {
     button.addEventListener("click", () => selectAnswer(button, option));
     optionsContainer.appendChild(button);
   });
+}
+
+function buildAnswerPositions(count) {
+  const positions = [];
+
+  while (positions.length < count) {
+    positions.push(...shuffleValues([0, 1, 2, 3]));
+  }
+
+  return positions.slice(0, count);
+}
+
+function shuffleValues(values) {
+  const shuffled = [...values];
+
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+
+  return shuffled;
 }
 
 function createAudioControls() {
@@ -743,6 +776,7 @@ function restartLesson() {
   currentQuestionAnswered = false;
   lessonCompleted = false;
   lessonSaveInProgress = false;
+  multipleChoiceAnswerPositions = buildAnswerPositions(multipleChoiceQuestionNumbers.length);
   selectedCategory = isCheckpoint ? checkpointCategories[0] : lessonCategorySelect?.value || "all";
   clearLessonState();
   updateScoreDisplay();

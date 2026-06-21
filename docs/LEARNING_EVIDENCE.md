@@ -14,6 +14,8 @@ Taking Memory Tests Improves Long-Term Retention. *Psychological Science, 17*(3)
 Listening, typing, speaking, and word-building reduce reliance on recognition alone.
 Assessment answer positions are balanced and randomized so position patterns cannot
 replace retrieval of the language answer.
+The same rule applies to ordinary lesson multiple-choice exercises: correct positions
+are sampled without repetition within each session cycle.
 
 ## Spaced Practice
 

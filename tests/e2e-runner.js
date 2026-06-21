@@ -193,6 +193,7 @@ async function main() {
       const page = await newPage(browser);
       let categoryQuestionIndex = 0;
       const requestedCategories = [];
+      const correctOptionPositions = [];
 
       await page.route("**/ai/generate-lesson-question", async (route) => {
         const body = route.request().postDataJSON();
@@ -259,6 +260,8 @@ async function main() {
       for (const [questionIndex, question] of mockQuestions.entries()) {
         if (questionIndex === 0 || questionIndex === 4) {
           await expectVisibleText(page, question.questionPt);
+          const optionTexts = await page.locator(".option-btn").allTextContents();
+          correctOptionPositions.push(optionTexts.indexOf(question.correctAnswer));
         } else if (questionIndex === 1) {
           await expectVisibleText(page, "Listen and build the phrase");
           await page.getByRole("button", { name: "Play phrase", exact: true }).waitFor();
@@ -312,6 +315,7 @@ async function main() {
         ["multiple-choice", "listen-build", "listen-type", "speak", "multiple-choice"]
       );
       assert.equal(savedAttempts.every((attempt) => attempt.isCorrect), true);
+      assert.equal(new Set(correctOptionPositions).size, 2);
       await pause();
       await page.close();
     });

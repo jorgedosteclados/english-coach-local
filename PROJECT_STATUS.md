@@ -275,3 +275,5 @@ speaking, adaptive review, daily review, and history.
   first incomplete path unit; course completion opens the final progress dashboard.
 - Isolated E2E and Playwright databases from `english_coach.db` so automated tests can
   run while the app is open without changing the learner's local progress.
+- Randomized common-lesson answer positions with no repeated correct position inside
+  the same session cycle; added regression coverage against answer-position patterns.
