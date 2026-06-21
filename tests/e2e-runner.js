@@ -94,7 +94,7 @@ async function main() {
       await expectVisibleText(page, "Support Foundations");
       await expectVisibleText(page, "Customer Conversation");
       await expectVisibleText(page, "Daily Review");
-      await expectVisibleText(page, "3 of 20 units completed");
+      await expectVisibleText(page, "3 of 24 units completed");
       await expectVisibleText(page, "Your badges");
       const conversationStep = page.getByRole("button", { name: /Customer Conversation/ });
       await conversationStep.click();
@@ -277,6 +277,119 @@ async function main() {
       await expectVisibleText(page, "Correct.");
       await page.getByRole("button", { name: "Continue" }).click();
       await expectVisibleText(page, "Review complete!");
+      await pause();
+      await page.close();
+    });
+
+    await run(results, "phase checkpoint requires 80 percent mastery", async () => {
+      await seedUnitProgress([1, 2, 3, 4, 5]);
+      const page = await newPage(browser);
+      let questionIndex = 0;
+      const requestedCategories = [];
+      const savedCheckpoints = [];
+
+      await page.route("**/ai/generate-lesson-question", async (route) => {
+        requestedCategories.push(route.request().postDataJSON().category);
+        const question = mockQuestions[questionIndex % mockQuestions.length];
+        questionIndex++;
+        await route.fulfill({
+          json: {
+            ...question,
+            questionId: mockQuestions.indexOf(question) + 1
+          }
+        });
+      });
+      await page.route("**/ai/save-question-attempt", async (route) => {
+        await route.fulfill({ json: { success: true } });
+      });
+      await page.route("**/ai/save-lesson-progress", async (route) => {
+        savedCheckpoints.push(route.request().postDataJSON());
+        await route.fulfill({
+          json: {
+            success: true,
+            streakDays: 4,
+            unitProgress: { unitId: 21, status: "completed" }
+          }
+        });
+      });
+
+      const checkpointUrl = `${baseURL}/lesson?unit=21&checkpoint=1&categories=request-info,tone,phrases`;
+      await page.goto(checkpointUrl);
+      await expectVisibleText(page, "Foundation Checkpoint");
+      await page.evaluate(() => {
+        correctAnswers = 6;
+        wrongAnswers = 2;
+        xpEarned = 60;
+        finishLesson();
+      });
+      await expectVisibleText(page, "Review and try again");
+      await expectVisibleText(page, "You need 7 correct answers");
+      assert.equal(savedCheckpoints.length, 0);
+
+      questionIndex = 0;
+      await page.goto(checkpointUrl);
+      const checkpointExerciseTypes = [
+        "multiple-choice",
+        "listen-build",
+        "listen-type",
+        "speak",
+        "multiple-choice",
+        "listen-type",
+        "listen-build",
+        "multiple-choice"
+      ];
+
+      for (let index = 0; index < checkpointExerciseTypes.length; index++) {
+        const exerciseType = checkpointExerciseTypes[index];
+        await expectVisibleText(page, `Question ${index + 1} of 8`);
+
+        if (exerciseType === "multiple-choice") {
+          await page.locator(".option-btn").first().waitFor();
+        } else if (exerciseType === "listen-build") {
+          await page.locator("#wordBank .word-token").first().waitFor();
+        } else if (exerciseType === "listen-type") {
+          await page.locator("#lessonTypedAnswer").waitFor();
+        } else {
+          await page.locator("#lessonSpokenAnswer").waitFor();
+        }
+
+        const correctAnswer = await page.evaluate(() => currentQuestion.correctAnswer);
+
+        if (exerciseType === "multiple-choice") {
+          await page.getByRole("button", { name: correctAnswer }).click();
+        } else if (exerciseType === "listen-build") {
+          await page.evaluate((answer) => {
+            answer.split(/\s+/).forEach((word) => {
+              const token = [...document.querySelectorAll("#wordBank .word-token")].find(
+                (button) => button.textContent === word
+              );
+              token.click();
+            });
+          }, correctAnswer);
+        } else if (exerciseType === "listen-type") {
+          await page.locator("#lessonTypedAnswer").fill(correctAnswer);
+        } else {
+          await page.locator("#lessonSpokenAnswer").fill(correctAnswer);
+        }
+
+        await page.getByRole("button", { name: "Check answer" }).click();
+        await expectVisibleText(page, "Correct! +10 XP.");
+        await page.getByRole("button", { name: "Continue" }).click();
+      }
+
+      await expectVisibleText(page, "Checkpoint complete!");
+      await expectVisibleText(page, "The next phase is now unlocked.");
+      assert.equal(savedCheckpoints.length, 1);
+      assert.deepEqual(savedCheckpoints[0], {
+        xpEarned: 80,
+        correctAnswers: 8,
+        wrongAnswers: 0,
+        unitId: 21
+      });
+      assert.deepEqual(
+        requestedCategories.slice(-8),
+        ["request-info", "tone", "phrases", "request-info", "tone", "phrases", "request-info", "tone"]
+      );
       await pause();
       await page.close();
     });
@@ -755,24 +868,28 @@ function getReviewTestQuestion() {
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(dbPath);
 
-    db.get(
-      "SELECT id, question_pt, correct_answer FROM lesson_questions ORDER BY id LIMIT 1",
-      [],
-      (selectError, question) => {
-        if (selectError || !question) {
-          db.close();
-          reject(selectError || new Error("No lesson question available for review test."));
-          return;
-        }
+    db.serialize(() => {
+      db.run("DELETE FROM question_attempts");
+      db.run("DELETE FROM question_mastery");
+      db.get(
+        "SELECT id, question_pt, correct_answer FROM lesson_questions ORDER BY id LIMIT 1",
+        [],
+        (selectError, question) => {
+          if (selectError || !question) {
+            db.close();
+            reject(selectError || new Error("No lesson question available for review test."));
+            return;
+          }
 
-        db.close();
-        resolve({
-          questionId: question.id,
-          questionPt: question.question_pt,
-          correctAnswer: question.correct_answer
-        });
-      }
-    );
+          db.close();
+          resolve({
+            questionId: question.id,
+            questionPt: question.question_pt,
+            correctAnswer: question.correct_answer
+          });
+        }
+      );
+    });
   });
 }
 

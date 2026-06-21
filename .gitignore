@@ -9,3 +9,4 @@ cloudflared*.log
 test-results/
 playwright-report/
 blob-report/
+local_backups/

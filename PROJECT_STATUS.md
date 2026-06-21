@@ -62,7 +62,8 @@ The home page is organized around a learning path:
 
 ## Learning Path Structure
 
-The home path contains 20 sequential steps grouped into four phases:
+The home path contains 24 sequential nodes grouped into four phases: 20 learning
+activities and one checkpoint after each group of five activities.
 
 1. **Support Foundations**: support basics, asking for details, correction,
    customer conversation, and speaking practice.
@@ -82,6 +83,12 @@ Unlocking is enforced in both places:
 - The home path exposes only the first incomplete step after completed steps.
 - The progress service rejects attempts to save a locked unit until every previous
   unit is complete.
+
+Each phase checkpoint contains eight mixed exercises drawn from three categories in
+that phase. A learner needs at least 7/8 correct answers (80%) to complete the
+checkpoint and unlock the next phase. Failed checkpoint answers still enter adaptive
+review, but the checkpoint node is not marked complete. Existing users who had
+already reached later phases receive the required earlier checkpoints automatically.
 
 ## Lesson Experience
 
@@ -192,3 +199,10 @@ speaking, adaptive review, daily review, and history.
 - Replaced unordered speaking scoring with sequential word alignment and visible
   match, missing, different, and extra-word states.
 - Collapsed detailed AI speaking feedback behind an optional disclosure.
+- Expanded the path from 20 activities to 24 nodes with four phase checkpoints.
+- Added eight-question mixed checkpoint sessions with a minimum 80% mastery rule.
+- Added retry and adaptive-review guidance when a checkpoint is not passed.
+- Added progress migration for users who reached later phases before checkpoints existed.
+- Expanded the main E2E suite to 10 flows with checkpoint pass/fail coverage.
+- Added a reusable local progress-state tool for fresh starts, checkpoint testing,
+  status inspection, and restoring the original snapshot.

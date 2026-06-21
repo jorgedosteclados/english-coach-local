@@ -214,6 +214,34 @@ learningPathStatement.finalize((pathError) => {
   }
 });
 
+[
+  { checkpointId: 21, laterUnitIds: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+  { checkpointId: 22, laterUnitIds: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+  { checkpointId: 23, laterUnitIds: [16, 17, 18, 19, 20] }
+].forEach(({ checkpointId, laterUnitIds }) => {
+  db.run(
+    `
+    INSERT OR IGNORE INTO user_unit_progress (
+      user_id,
+      unit_id,
+      status,
+      completed_count,
+      last_completed_at,
+      updated_at
+    )
+    SELECT 1, ?, 'completed', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    WHERE EXISTS (
+      SELECT 1
+      FROM user_unit_progress
+      WHERE user_id = 1
+        AND status = 'completed'
+        AND unit_id IN (${laterUnitIds.map(() => "?").join(", ")})
+    )
+    `,
+    [checkpointId, ...laterUnitIds]
+  );
+});
+
 db.run(
   `
   INSERT OR IGNORE INTO writing_missions

@@ -55,11 +55,11 @@
             </div>
           <% } %>
           <div
-            class="coach-step step-<%= ['left', 'center', 'right'][index % 3] %> <%= unit.isCompleted ? 'completed' : '' %> <%= unit.isLocked ? 'locked' : 'available' %>"
+            class="coach-step step-<%= ['left', 'center', 'right'][index % 3] %> <%= unit.isCheckpoint ? 'checkpoint' : '' %> <%= unit.isCompleted ? 'completed' : '' %> <%= unit.isLocked ? 'locked' : 'available' %>"
             <% if (!unit.isLocked && unit.href) { %>role="button" tabindex="0"<% } %>
           >
             <span class="coach-step-node">
-              <%= unit.isCompleted ? '✓' : unit.isLocked ? 'L' : unit.unit_order %>
+              <%= unit.isCompleted ? '✓' : unit.isLocked ? 'L' : unit.isCheckpoint ? 'C' : unit.unit_order %>
             </span>
             <strong><%= unit.title %></strong>
             <small>
@@ -69,7 +69,7 @@
               <span class="coach-step-detail" aria-hidden="true">
                 <b><%= unit.title %></b>
                 <em><%= unit.description %></em>
-                <a href="<%= unit.href %>"><%= unit.isCompleted ? 'Practice again +5 XP' : 'Start lesson +10 XP' %></a>
+                <a href="<%= unit.href %>"><%= unit.isCompleted ? 'Practice again +5 XP' : unit.isCheckpoint ? 'Start checkpoint' : 'Start lesson +10 XP' %></a>
               </span>
             <% } %>
           </div>

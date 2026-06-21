@@ -19,10 +19,10 @@
 
     <section class="lesson-heading">
       <div>
-        <p><%= lessonName %></p>
-        <h1>Choose the best response</h1>
+        <p><%= isCheckpoint ? 'Phase checkpoint' : lessonName %></p>
+        <h1><%= isCheckpoint ? lessonName : 'Choose the best response' %></h1>
       </div>
-      <label class="lesson-category-control" for="lessonCategory">
+      <label class="lesson-category-control <%= isCheckpoint ? 'hidden' : '' %>" for="lessonCategory">
         <span>Practice focus</span>
         <select id="lessonCategory">
           <% lessonCategories.forEach((category) => { %>

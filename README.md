@@ -65,3 +65,19 @@ This file is ignored by Git because it can contain local progress/history. To mo
 ```powershell
 npm run test:e2e
 ```
+
+## Reusable Progress States
+
+The first destructive command creates a local backup automatically. Use these
+commands to test the path repeatedly without losing real progress:
+
+```bash
+npm run progress -- status
+npm run progress -- fresh
+npm run progress -- checkpoint 1
+npm run progress -- checkpoint 2
+npm run progress -- restore
+```
+
+Use `npm run progress -- backup` only when you intentionally want to replace the
+saved original snapshot with the current progress.

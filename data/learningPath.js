@@ -8,7 +8,8 @@ const learningPathSections = [
       unit(2, "Ask for Details", "Write clear requests for the information you need.", "writing", "/writing?unit=2"),
       unit(3, "Correct and Improve", "Turn common mistakes into natural English.", "correction", "/correct?unit=3"),
       unit(4, "Customer Conversation", "Handle a short conversation with a customer.", "conversation", "/conversation?unit=4"),
-      unit(5, "Speaking Practice", "Build confidence for your first live support calls.", "speaking", "/speaking?unit=5")
+      unit(5, "Speaking Practice", "Build confidence for your first live support calls.", "speaking", "/speaking?unit=5"),
+      checkpoint(21, 1, "Foundation Checkpoint", ["request-info", "tone", "phrases"])
     ]
   },
   {
@@ -20,7 +21,8 @@ const learningPathSections = [
       unit(7, "Troubleshooting", "Practice clear instructions and diagnostic questions.", "lesson", "/lesson?unit=7&category=troubleshooting"),
       unit(8, "Follow-up Writing", "Write a concise follow-up without sounding repetitive.", "writing", "/writing?unit=8"),
       unit(9, "Difficult Customer", "Stay calm and helpful in a challenging conversation.", "conversation", "/conversation?unit=9"),
-      unit(10, "Call Confidence", "Speak troubleshooting phrases with a steady rhythm.", "speaking", "/speaking?unit=10")
+      unit(10, "Call Confidence", "Speak troubleshooting phrases with a steady rhythm.", "speaking", "/speaking?unit=10"),
+      checkpoint(22, 2, "Ticket Mastery Checkpoint", ["case-update", "troubleshooting", "impact"])
     ]
   },
   {
@@ -32,7 +34,8 @@ const learningPathSections = [
       unit(12, "Explain the Impact", "Describe business impact clearly and objectively.", "lesson", "/lesson?unit=12&category=impact"),
       unit(13, "Clarify the Scope", "Separate product issues from configuration questions.", "lesson", "/lesson?unit=13&category=scope"),
       unit(14, "Technical Correction", "Improve the accuracy of a technical explanation.", "correction", "/correct?unit=14"),
-      unit(15, "Integration Conversation", "Guide a customer through a system integration case.", "conversation", "/conversation?unit=15")
+      unit(15, "Integration Conversation", "Guide a customer through a system integration case.", "conversation", "/conversation?unit=15"),
+      checkpoint(23, 3, "Problem Solving Checkpoint", ["systems", "scope", "routing"])
     ]
   },
   {
@@ -44,7 +47,8 @@ const learningPathSections = [
       unit(17, "Email Excellence", "Use natural structure and phrases in support emails.", "lesson", "/lesson?unit=17&category=email"),
       unit(18, "Close the Ticket", "Confirm resolution and close cases professionally.", "lesson", "/lesson?unit=18&category=closure"),
       unit(19, "Fluent Support Call", "Deliver longer support phrases clearly and naturally.", "speaking", "/speaking?unit=19"),
-      unit(20, "Final Support Simulation", "Complete an end-to-end customer conversation.", "conversation", "/conversation?unit=20")
+      unit(20, "Final Support Simulation", "Complete an end-to-end customer conversation.", "conversation", "/conversation?unit=20"),
+      checkpoint(24, 4, "Final Course Checkpoint", ["tone", "email", "closure"])
     ]
   }
 ];
@@ -54,16 +58,30 @@ function unit(id, title, description, activityType, href) {
     id,
     title,
     description,
-    unitOrder: id,
     activityType,
     href,
-    isLockedDefault: 0
+    isLockedDefault: 0,
+    isCheckpoint: false
   };
 }
 
+function checkpoint(id, phase, title, categories) {
+  return {
+    id,
+    title,
+    description: "Demonstrate at least 80% mastery to complete this phase.",
+    activityType: "checkpoint",
+    href: `/lesson?unit=${id}&checkpoint=${phase}&categories=${categories.join(",")}`,
+    isLockedDefault: 0,
+    isCheckpoint: true
+  };
+}
+
+let learningPathOrder = 0;
 const learningPathUnits = learningPathSections.flatMap((section) =>
   section.units.map((pathUnit) => ({
     ...pathUnit,
+    unitOrder: ++learningPathOrder,
     sectionId: section.id,
     sectionTitle: section.title,
     sectionDescription: section.description

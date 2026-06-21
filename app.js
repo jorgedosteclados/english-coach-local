@@ -56,6 +56,7 @@ function buildPathState(rows) {
       sectionId: learningPathMetadata.get(unit.id)?.sectionId || 1,
       sectionTitle: learningPathMetadata.get(unit.id)?.sectionTitle || "Learning Path",
       sectionDescription: learningPathMetadata.get(unit.id)?.sectionDescription || "",
+      isCheckpoint: Boolean(learningPathMetadata.get(unit.id)?.isCheckpoint),
       isCompleted,
       isLocked,
       completedCount: unit.completed_count || 0,
@@ -143,7 +144,8 @@ app.get("/lesson", (req, res) => {
   const unit = learningPathMetadata.get(getRequestedUnitId(req, 1));
   res.render("lesson", {
     lessonCategories,
-    lessonName: unit?.title || "Support Basics"
+    lessonName: unit?.title || "Support Basics",
+    isCheckpoint: Boolean(unit?.isCheckpoint)
   });
 });
 

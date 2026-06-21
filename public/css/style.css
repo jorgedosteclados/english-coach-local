@@ -1156,6 +1156,16 @@ button.coach-step:hover {
   box-shadow: 0 7px 0 #188657, 0 0 0 3px #ccefe1;
 }
 
+.coach-step.checkpoint .coach-step-node {
+  background: #ff9f1c;
+  box-shadow: 0 7px 0 #cf7100, 0 0 0 3px #ffe3bb;
+}
+
+.coach-step.checkpoint.completed .coach-step-node {
+  background: #8b5cf6;
+  box-shadow: 0 7px 0 #6d3bd1, 0 0 0 3px #e8dcff;
+}
+
 .coach-step.locked .coach-step-node {
   background: #cbd5e1;
   color: #64748b;
@@ -1899,6 +1909,29 @@ button.coach-step:hover {
   background: #eef4ff;
   box-shadow: none;
   color: #0b5cff;
+}
+
+.checkpoint-score-badge {
+  display: flex;
+  width: 86px;
+  height: 86px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #fff4e5;
+  color: #c56500;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.checkpoint-retry h2 {
+  color: #c56500;
+}
+
+.checkpoint-review-link {
+  width: 100%;
+  margin-top: 8px;
 }
 
 .lesson-audio-controls {

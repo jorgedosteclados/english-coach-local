@@ -3,14 +3,23 @@ const lessonQuery = new URLSearchParams(window.location.search);
 const requestedLessonUnitId = Number(lessonQuery.get("unit"));
 const activeLessonUnitId = requestedLessonUnitId > 0 ? requestedLessonUnitId : 1;
 const requestedLessonCategory = lessonQuery.get("category");
+const checkpointPhase = Number(lessonQuery.get("checkpoint")) || null;
+const checkpointCategories = String(lessonQuery.get("categories") || "")
+  .split(",")
+  .map((category) => category.trim())
+  .filter(Boolean);
+const isCheckpoint = Boolean(checkpointPhase && checkpointCategories.length);
 
-const totalQuestions = 5;
+const totalQuestions = isCheckpoint ? 8 : 5;
 const lessonStateKey = `englishCoach.lesson.unit${activeLessonUnitId}.state`;
 const exerciseTypes = [
   "multiple-choice",
   "listen-build",
   "listen-type",
   "speak",
+  "multiple-choice",
+  "listen-type",
+  "listen-build",
   "multiple-choice"
 ];
 
@@ -66,6 +75,14 @@ window.addEventListener("beforeunload", (event) => {
 
 function getExerciseType() {
   return exerciseTypes[questionNumber - 1] || "multiple-choice";
+}
+
+function getQuestionCategory() {
+  if (isCheckpoint) {
+    return checkpointCategories[(questionNumber - 1) % checkpointCategories.length];
+  }
+
+  return selectedCategory;
 }
 
 function normalizeText(text) {
@@ -244,7 +261,7 @@ async function loadQuestion() {
     const response = await fetch("/ai/generate-lesson-question", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category: selectedCategory })
+      body: JSON.stringify({ category: getQuestionCategory() })
     });
     const data = await response.json();
 
@@ -632,6 +649,16 @@ async function finishLesson() {
   continueHomeBtn.classList.add("hidden");
   restartLessonBtn.classList.add("hidden");
 
+  const requiredCorrectAnswers = Math.ceil(totalQuestions * 0.8);
+
+  if (isCheckpoint && correctAnswers < requiredCorrectAnswers) {
+    renderCheckpointRetry(requiredCorrectAnswers);
+    continueHomeBtn.classList.remove("hidden");
+    restartLessonBtn.classList.remove("hidden");
+    lessonSaveInProgress = false;
+    return;
+  }
+
   try {
     const response = await fetch("/ai/save-lesson-progress", {
       method: "POST",
@@ -658,11 +685,16 @@ async function finishLesson() {
 }
 
 function renderCompletionScreen(streakText, saveStatus) {
+  const title = isCheckpoint ? "Checkpoint complete!" : "Lesson complete!";
+  const message = isCheckpoint
+    ? "You demonstrated the required mastery. The next phase is now unlocked."
+    : "Great work. You practiced reading, listening, writing, and speaking for real support situations.";
+
   lessonFeedback.innerHTML = `
     <div class="lesson-complete">
       <div class="success-badge">✓</div>
-      <h2>Lesson complete!</h2>
-      <p class="motivation-message">Great work. You practiced reading, listening, writing, and speaking for real support situations.</p>
+      <h2>${title}</h2>
+      <p class="motivation-message">${message}</p>
       <div class="completion-stats">
         <div><span>${xpEarned}</span><small>XP earned</small></div>
         <div><span>${correctAnswers}/${totalQuestions}</span><small>Correct</small></div>
@@ -670,6 +702,21 @@ function renderCompletionScreen(streakText, saveStatus) {
         <div><span>${streakText}</span><small>Current streak</small></div>
       </div>
       <p class="save-status">${saveStatus}</p>
+    </div>
+  `;
+}
+
+function renderCheckpointRetry(requiredCorrectAnswers) {
+  lessonFeedback.innerHTML = `
+    <div class="lesson-complete checkpoint-retry">
+      <div class="checkpoint-score-badge">${correctAnswers}/${totalQuestions}</div>
+      <h2>Review and try again</h2>
+      <p class="motivation-message">You need ${requiredCorrectAnswers} correct answers to complete this phase. Your mistakes were added to adaptive review.</p>
+      <div class="completion-stats">
+        <div><span>${correctAnswers}</span><small>Correct</small></div>
+        <div><span>${wrongAnswers}</span><small>To review</small></div>
+      </div>
+      <a href="/mistakes" class="primary-link checkpoint-review-link">Review mistakes</a>
     </div>
   `;
 }
@@ -685,7 +732,7 @@ function restartLesson() {
   currentQuestionAnswered = false;
   lessonCompleted = false;
   lessonSaveInProgress = false;
-  selectedCategory = lessonCategorySelect?.value || "all";
+  selectedCategory = isCheckpoint ? checkpointCategories[0] : lessonCategorySelect?.value || "all";
   clearLessonState();
   updateScoreDisplay();
   loadQuestion();
