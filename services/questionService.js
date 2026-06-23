@@ -4,6 +4,7 @@ const fallbackQuestions = require("../data/fallbackQuestions");
 const seedLessonQuestions = require("../data/seedLessonQuestions");
 const { generateAIResponse } = require("./aiService");
 const { buildLessonQuestionPrompt } = require("./promptService");
+const { getAiSource } = require("./questionBankService");
 
 function getRandomItem(items) {
   return items[Math.floor(Math.random() * items.length)];
@@ -25,9 +26,9 @@ function getFallbackQuestion(categoryId) {
 function loadSavedQuestion(categoryId) {
   const category = getLessonCategory(categoryId);
   const whereClause = category.source
-    ? "WHERE source = ? AND times_used = 0"
+    ? "WHERE source IN (?, ?) AND times_used = 0"
     : "WHERE times_used = 0";
-  const params = category.source ? [category.source] : [];
+  const params = category.source ? [category.source, getAiSource(category)] : [];
 
   return new Promise((resolve) => {
     db.get(
@@ -84,7 +85,7 @@ function loadSavedQuestion(categoryId) {
 }
 
 function saveAIQuestion(question, category) {
-  const source = category.source || "ai";
+  const source = getAiSource(category);
 
   return new Promise((resolve) => {
     db.run(
@@ -133,7 +134,7 @@ function parseAIQuestion(aiTextRaw) {
   return question;
 }
 
-async function getLessonQuestion(categoryId) {
+async function getLessonQuestion(categoryId, options = {}) {
   const category = getLessonCategory(categoryId);
   const savedQuestion = await loadSavedQuestion(categoryId);
 
@@ -142,7 +143,8 @@ async function getLessonQuestion(categoryId) {
   }
 
   try {
-    const aiTextRaw = await generateAIResponse(buildLessonQuestionPrompt(category));
+    const generateResponse = options.generateAIResponse || generateAIResponse;
+    const aiTextRaw = await generateResponse(buildLessonQuestionPrompt(category));
     const question = parseAIQuestion(aiTextRaw);
 
     return await saveAIQuestion(question, category);
@@ -154,5 +156,7 @@ async function getLessonQuestion(categoryId) {
 
 module.exports = {
   getLessonQuestion,
-  getFallbackQuestion
+  getFallbackQuestion,
+  loadSavedQuestion,
+  parseAIQuestion
 };

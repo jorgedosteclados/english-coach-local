@@ -18,6 +18,7 @@ const {
 } = require("./data/unitContent");
 const { getDueMistakes } = require("./services/reviewService");
 const { getDashboardData, getDueReviewCount } = require("./services/dashboardService");
+const { getQuestionBankData } = require("./services/questionBankService");
 const {
   applyPlacementRecommendation,
   getPublicQuestions,
@@ -191,6 +192,15 @@ app.get("/progress", async (req, res) => {
   } catch (error) {
     console.error("Error loading progress dashboard:", error.message);
     res.status(500).send("Unable to load progress right now.");
+  }
+});
+
+app.get("/question-bank", async (req, res) => {
+  try {
+    res.render("question-bank", { bank: await getQuestionBankData() });
+  } catch (error) {
+    console.error("Error loading question bank:", error.message);
+    res.status(500).send("Unable to load the question bank right now.");
   }
 });
 

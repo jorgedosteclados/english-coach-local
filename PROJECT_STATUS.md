@@ -73,6 +73,12 @@ The research-to-feature mapping and starting bibliography are maintained in
   category are exhausted.
 - AI-generated questions are saved with `times_used = 1` because they are returned
   to the learner immediately.
+- `/question-bank` shows question inventory, unused/used counts, AI-generated counts,
+  category coverage, weak phrases, and recent AI-generated questions.
+- New AI-generated lesson questions are saved with `source = ai:<category>` so the app
+  can distinguish generated content from CSV/imported content. Older generated
+  questions created before this change may not be distinguishable if they used a CSV
+  source value.
 
 ## Pedagogical Matrix and Placement
 
@@ -191,11 +197,11 @@ Mistakes screen loads only questions due now and reschedules them after review.
 1. Review the learning-path home with real users and refine spacing or interactions
    from their feedback.
 2. Validate audio voices and microphone permissions on the target desktop and phone browsers.
-3. Add a question-bank dashboard with unused, used, AI-generated, and mastery counts.
-4. Add a focused automated test for saved-question exhaustion before AI generation.
-5. Improve speaking feedback with word-level pronunciation guidance and reference audio.
-6. Add export/import for progress, history, and question data.
-7. Add access control before exposing the app through a public tunnel.
+3. Improve speaking feedback with word-level pronunciation guidance and reference audio.
+4. Add export/import for progress, history, and question data.
+5. Add access control before exposing the app through a public tunnel.
+6. Add a question-bank maintenance flow for importing, disabling, editing, or resetting
+   specific questions.
 
 ## Verification
 
@@ -209,6 +215,15 @@ Expected coverage includes home/path, lessons, writing, correction, conversation
 speaking, adaptive review, daily review, and history.
 
 ## Change Log
+
+### 2026-06-23
+
+- Added `/question-bank` to monitor total, unused, used, AI-generated, due-review,
+  weak-question, and category coverage counts.
+- Changed future AI-generated lesson questions to use `ai:<category>` sources so they
+  can be reported separately from imported CSV questions.
+- Added E2E coverage proving saved questions are used before AI generation is called,
+  and that AI is only requested after a category is exhausted.
 
 ### 2026-06-19
 

@@ -195,6 +195,54 @@ async function main() {
       await page.close();
     });
 
+    await run(results, "question bank tracks inventory and delays AI generation", async () => {
+      await resetQuestionUsage("csv:request-info", 0);
+      process.env.DATABASE_PATH = dbPath;
+      const { getLessonQuestion } = require("../services/questionService");
+
+      const page = await newPage(browser);
+      await page.goto(`${baseURL}/question-bank`);
+      await expectVisibleText(page, "Question bank");
+      await expectVisibleText(page, "Saved questions first");
+      await expectVisibleText(page, "Request information");
+      await expectVisibleText(page, "AI generated");
+      await page.close();
+
+      let aiCalls = 0;
+      const savedQuestion = await getLessonQuestion("request-info", {
+        generateAIResponse: async () => {
+          aiCalls += 1;
+          throw new Error("AI should not be called while saved questions are unused.");
+        }
+      });
+
+      assert.equal(aiCalls, 0);
+      assert.equal(savedQuestion.source, "csv:request-info");
+      assert.ok(savedQuestion.questionId);
+
+      await resetQuestionUsage("csv:request-info", 1);
+      const generatedQuestion = await getLessonQuestion("request-info", {
+        generateAIResponse: async () => {
+          aiCalls += 1;
+          return JSON.stringify({
+            questionPt: "Confirme que voce vai acompanhar o caso.",
+            options: [
+              "I will keep monitoring the case.",
+              "I will keep monitor the case.",
+              "I keep to monitoring the case.",
+              "I will follow the case monitored."
+            ],
+            correctAnswer: "I will keep monitoring the case.",
+            explanationPt: "Use 'keep monitoring' para expressar acompanhamento continuo."
+          });
+        }
+      });
+
+      assert.equal(aiCalls, 1);
+      assert.equal(generatedQuestion.source, "ai:request-info");
+      assert.ok(generatedQuestion.questionId);
+    });
+
     await run(results, "lesson completes and saves progress", async () => {
       const page = await newPage(browser);
       let categoryQuestionIndex = 0;
@@ -1020,6 +1068,27 @@ function getReviewTestQuestion() {
         }
       );
     });
+  });
+}
+
+function resetQuestionUsage(source, timesUsed) {
+  return new Promise((resolve, reject) => {
+    const db = new sqlite3.Database(dbPath);
+
+    db.run(
+      "UPDATE lesson_questions SET times_used = ? WHERE source = ?",
+      [timesUsed, source],
+      (error) => {
+        db.close();
+
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      }
+    );
   });
 }
 

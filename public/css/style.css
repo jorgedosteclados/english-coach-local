@@ -1328,9 +1328,88 @@ button:hover {
 .progress-empty { margin: 12px 0; color: #64748b; font-size: 13px; }
 .progress-footer { display: flex; justify-content: space-between; padding: 12px 4px 0; }
 
+.question-bank-metrics {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.question-bank-rule code {
+  color: #0b5cff;
+  font-weight: 800;
+}
+
+.question-bank-table-wrap {
+  overflow-x: auto;
+}
+
+.question-bank-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.question-bank-table th {
+  padding: 0 12px 10px;
+  color: #64748b;
+  font-size: 10px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.question-bank-table td {
+  padding: 13px 12px;
+  border-top: 1px solid #e2e8f0;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.question-bank-table td:first-child {
+  min-width: 190px;
+  font-weight: 900;
+}
+
+.question-bank-table td small,
+.question-bank-ai-list small {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.question-bank-table .is-warning {
+  color: #ff4b4b;
+}
+
+.question-bank-ai-list {
+  display: grid;
+  gap: 10px;
+}
+
+.question-bank-ai-list article {
+  padding: 14px 16px;
+  border-radius: 13px;
+  background: #f8fafc;
+}
+
+.question-bank-ai-list strong,
+.question-bank-ai-list span {
+  display: block;
+}
+
+.question-bank-ai-list strong {
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.question-bank-ai-list span {
+  color: #475569;
+  font-size: 13px;
+}
+
 @media (max-width: 700px) {
   .progress-shell { width: min(100% - 24px, 560px); padding-top: 22px; }
-  .progress-metrics { grid-template-columns: repeat(2, 1fr); }
+  .progress-metrics,
+  .question-bank-metrics { grid-template-columns: repeat(2, 1fr); }
   .progress-two-column,
   .progress-phase-grid { grid-template-columns: 1fr; }
   .progress-review-card { align-items: stretch; flex-direction: column; }
@@ -1338,6 +1417,7 @@ button:hover {
   .progress-review-card > a { text-align: center; }
   .progress-placement-card > a { text-align: center; }
   .progress-weak-list article { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .progress-footer { flex-wrap: wrap; gap: 10px; }
 }
 
 .coach-mobile-header {

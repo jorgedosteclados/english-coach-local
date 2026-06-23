@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Question Bank | English Coach Local</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="progress-page question-bank-page">
+  <main class="progress-shell">
+    <header class="progress-heading">
+      <a href="/">← Back to learning path</a>
+      <p>Content inventory</p>
+      <h1>Question bank</h1>
+      <span>Track saved questions, category coverage, AI generation, and review pressure.</span>
+    </header>
+
+    <section class="progress-metrics question-bank-metrics" aria-label="Question bank summary">
+      <article><strong><%= bank.summary.total %></strong><span>Total questions</span></article>
+      <article><strong><%= bank.summary.unused %></strong><span>Unused saved</span></article>
+      <article><strong><%= bank.summary.used %></strong><span>Used questions</span></article>
+      <article><strong><%= bank.summary.aiGenerated %></strong><span>AI generated</span></article>
+      <article><strong><%= bank.summary.dueReview %></strong><span>Due for review</span></article>
+      <article><strong><%= bank.summary.weakQuestions %></strong><span>Weak questions</span></article>
+    </section>
+
+    <section class="progress-review-card question-bank-rule">
+      <div>
+        <p>AI usage rule</p>
+        <h2>Saved questions first</h2>
+        <span>Lessons draw from unused saved questions before asking AI to create a new one. New AI questions are saved as <code>ai:&lt;category&gt;</code>.</span>
+      </div>
+      <a href="/lesson">Test lesson</a>
+    </section>
+
+    <section class="progress-panel">
+      <div class="progress-panel-heading">
+        <div><p>Coverage</p><h2>By category</h2></div>
+        <a href="/progress">View progress</a>
+      </div>
+      <div class="question-bank-table-wrap">
+        <table class="question-bank-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Total</th>
+              <th>Unused</th>
+              <th>Used</th>
+              <th>AI</th>
+              <th>Weak</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% bank.categories.forEach((category) => { %>
+              <tr>
+                <td>
+                  <strong><%= category.label %></strong>
+                  <small><%= category.correct + category.wrong %> attempts</small>
+                </td>
+                <td><%= category.total %></td>
+                <td><%= category.unused %></td>
+                <td><%= category.used %></td>
+                <td><%= category.aiGenerated %></td>
+                <td class="<%= category.weak > 0 ? 'is-warning' : '' %>"><%= category.weak %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="progress-two-column">
+      <section class="progress-panel">
+        <div class="progress-panel-heading"><div><p>Needs attention</p><h2>Weak phrases</h2></div></div>
+        <% if (bank.weakQuestions.length === 0) { %>
+          <p class="progress-empty">No weak phrases yet. Mistakes will appear here after lesson attempts.</p>
+        <% } else { %>
+          <div class="progress-weak-list">
+            <% bank.weakQuestions.forEach((question) => { %>
+              <article>
+                <div><strong><%= question.question_pt %></strong><span><%= question.correct_answer %></span></div>
+                <small><b><%= question.total_wrong %></b> mistakes · <%= question.total_correct %> correct</small>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+
+      <section class="progress-panel">
+        <div class="progress-panel-heading"><div><p>AI inventory</p><h2>Recent generated</h2></div></div>
+        <% if (bank.recentAiQuestions.length === 0) { %>
+          <p class="progress-empty">No AI-generated lesson questions yet. That is expected while saved questions are still available.</p>
+        <% } else { %>
+          <div class="question-bank-ai-list">
+            <% bank.recentAiQuestions.forEach((question) => { %>
+              <article>
+                <strong><%= question.question_pt %></strong>
+                <span><%= question.correct_answer %></span>
+                <small><%= question.source %></small>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+    </div>
+
+    <footer class="progress-footer">
+      <a href="/progress">Progress dashboard</a>
+      <a href="/">Return to learning path</a>
+    </footer>
+  </main>
+  <script src="/js/soundManager.js"></script>
+</body>
+</html>
