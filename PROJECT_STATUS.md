@@ -63,6 +63,7 @@ The research-to-feature mapping and starting bibliography are maintained in
 - A1–B2 placement diagnostic with phase recommendation and skill breakdown
 - Interactive reading mode in the learning path with sentence playback and word lookup
 - Imported book library with PDF/TXT support and free reading mode
+- Immersive reading display with a calmer long-reading layout and saved preference
 - Reading vocabulary, personal dictionary, local dictionary, and translation cache
 - Optional visual word lookup with Openverse images cached locally
 - Local progress, XP, streak, achievements, and history

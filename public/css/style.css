@@ -270,10 +270,17 @@ textarea {
 .reading-topbar,
 .library-header {
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: 44px 1fr auto;
   gap: 12px;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.reading-topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .reading-topbar a,
@@ -290,6 +297,33 @@ textarea {
   background: #fffaf2;
   font-size: 24px;
   font-weight: 700;
+}
+
+.reading-mode-toggle {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid #d8cfc2;
+  border-radius: 8px;
+  background: #fffaf2;
+  color: #314355;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.reading-mode-toggle[aria-pressed="true"] {
+  border-color: #1f7a5c;
+  background: #eaf6ef;
+  color: #1f7a5c;
+}
+
+.reading-mode-toggle:hover {
+  background: #f4eadb;
+}
+
+.reading-mode-toggle[aria-pressed="true"]:hover {
+  background: #dcefe6;
 }
 
 .reading-topbar span,
@@ -372,7 +406,7 @@ textarea {
   gap: 14px;
   align-items: center;
   justify-content: space-between;
-  margin: 16px 0 72px;
+  margin: 16px 0 148px;
   padding: 16px;
   border: 1px solid #dccfbd;
   border-radius: 8px;
@@ -414,6 +448,68 @@ textarea {
 .reading-text {
   max-width: 680px;
   margin: 0 auto;
+}
+
+.immersive-reading {
+  background:
+    linear-gradient(90deg, rgba(49, 67, 85, 0.05), transparent 14%, transparent 86%, rgba(49, 67, 85, 0.05)),
+    #f3eee4;
+}
+
+.immersive-reading .reading-shell {
+  max-width: 980px;
+  padding-top: 12px;
+}
+
+.immersive-reading .reading-topbar {
+  margin-bottom: 10px;
+}
+
+.immersive-reading .reading-topbar h1 {
+  font-size: 21px;
+}
+
+.immersive-reading .reading-status {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 250, 242, 0.62);
+  box-shadow: none;
+}
+
+.immersive-reading .reading-status strong {
+  font-size: 14px;
+}
+
+.immersive-reading .reading-player {
+  min-height: calc(100vh - 214px);
+  padding: 36px clamp(16px, 5vw, 62px);
+  border-color: transparent;
+  background: rgba(255, 253, 248, 0.58);
+  box-shadow: none;
+}
+
+.immersive-reading .reading-text {
+  max-width: 760px;
+}
+
+.immersive-reading .reading-sentence {
+  margin-bottom: 22px;
+  padding: 8px 12px;
+  color: #28343f;
+  font-size: 24px;
+  line-height: 1.9;
+}
+
+.immersive-reading .reading-sentence:hover {
+  background: rgba(255, 247, 236, 0.72);
+}
+
+.immersive-reading .reading-sentence.active {
+  background: #e7f2ec;
+}
+
+.immersive-reading .reading-controls {
+  background: rgba(246, 241, 233, 0.9);
 }
 
 .reading-sentence {
@@ -859,10 +955,20 @@ textarea {
     grid-template-columns: 40px 1fr 40px;
   }
 
+  .reading-topbar {
+    grid-template-columns: 40px 1fr auto;
+  }
+
   .reading-topbar a,
   .library-header a {
     width: 40px;
     height: 40px;
+  }
+
+  .reading-mode-toggle {
+    min-height: 40px;
+    padding: 0 10px;
+    font-size: 12px;
   }
 
   .reading-topbar h1,
@@ -880,9 +986,26 @@ textarea {
     padding: 14px;
   }
 
+  .immersive-reading .reading-shell {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .immersive-reading .reading-player {
+    min-height: calc(100vh - 210px);
+    padding: 18px 10px;
+  }
+
+  .immersive-reading .reading-sentence {
+    margin-bottom: 18px;
+    font-size: 21px;
+    line-height: 1.85;
+  }
+
   .reading-completion {
     align-items: stretch;
     flex-direction: column;
+    margin-bottom: 308px;
   }
 
   .reading-completion button,

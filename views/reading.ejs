@@ -14,7 +14,10 @@
         <span><%= reader.sourceType === 'book' ? 'Library reading' : reader.unitLabel || 'Guided reading' %></span>
         <h1><%= reader.title %></h1>
       </div>
-      <a href="/library" aria-label="Library">B</a>
+      <div class="reading-topbar-actions">
+        <button type="button" id="immersiveToggle" class="reading-mode-toggle" aria-pressed="false">Immersive</button>
+        <a href="/library" aria-label="Library">B</a>
+      </div>
     </header>
 
     <section class="reading-status" aria-label="Reading status">

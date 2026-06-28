@@ -8,6 +8,7 @@
   const voiceSelect = document.getElementById("readingVoice");
   const resetSpeechButton = document.getElementById("resetSpeech");
   const speechStatus = document.getElementById("speechStatus");
+  const immersiveToggle = document.getElementById("immersiveToggle");
   const sheet = document.getElementById("wordSheet");
   const closeSheetButton = document.getElementById("closeWordSheet");
   const wordLabel = document.getElementById("selectedWordLabel");
@@ -41,6 +42,15 @@
   let speechStartTimer = null;
   let speechFallbackTimer = null;
   let audioPlayer = null;
+
+  function setImmersiveMode(enabled) {
+    document.body.classList.toggle("immersive-reading", enabled);
+    if (immersiveToggle) {
+      immersiveToggle.setAttribute("aria-pressed", enabled ? "true" : "false");
+      immersiveToggle.textContent = enabled ? "Classic" : "Immersive";
+    }
+    localStorage.setItem("englishCoach.reading.immersive", enabled ? "1" : "0");
+  }
 
   function render() {
     textEl.innerHTML = "";
@@ -619,6 +629,9 @@
   previousButton.addEventListener("click", () => goToSentence(currentSentenceIndex - 1, false));
   nextButton.addEventListener("click", () => goToSentence(currentSentenceIndex + 1, false));
   resetSpeechButton?.addEventListener("click", resetSpeech);
+  immersiveToggle?.addEventListener("click", () => {
+    setImmersiveMode(!document.body.classList.contains("immersive-reading"));
+  });
   rateInput?.addEventListener("input", () => {
     localStorage.setItem("englishCoach.reading.rate", rateInput.value);
     if (isPlaying) {
@@ -762,5 +775,6 @@
   if ("speechSynthesis" in window) {
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }
+  setImmersiveMode(localStorage.getItem("englishCoach.reading.immersive") === "1");
   render();
 })();
