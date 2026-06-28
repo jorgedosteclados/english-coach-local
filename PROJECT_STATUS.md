@@ -47,6 +47,7 @@ The research-to-feature mapping and starting bibliography are maintained in
 - Vanilla JavaScript and CSS
 - Gemini, Groq, and optional OpenRouter AI providers
 - Optional local LibreTranslate service for reading lookups without AI tokens
+- Optional Edge TTS command-line provider for more natural experimental reading audio
 - Playwright end-to-end tests
 
 ## Implemented Features
@@ -64,6 +65,7 @@ The research-to-feature mapping and starting bibliography are maintained in
 - Interactive reading mode in the learning path with sentence playback and word lookup
 - Imported book library with PDF/TXT support and free reading mode
 - Immersive reading display with a calmer long-reading layout and saved preference
+- Natural online reading voice option through Edge TTS with cached MP3 generation
 - Reading vocabulary, personal dictionary, local dictionary, and translation cache
 - Optional visual word lookup with Openverse images cached locally
 - Local progress, XP, streak, achievements, and history
@@ -195,6 +197,9 @@ Mistakes screen loads only questions due now and reschedules them after review.
 - Reading word translation must not use AI providers or paid model tokens. The lookup
   order is personal dictionary, local dictionary, cached translation, optional local
   LibreTranslate, then manual entry.
+- Reading audio keeps the local macOS voice as the stable fallback. The Edge TTS
+  provider is experimental, uses the `edge-tts` CLI, caches generated MP3 files, and
+  may break if Microsoft changes the unofficial endpoint.
 - Reading word images should use public/licensed sources and must be cached locally.
   The reader should show only learner-approved images by default. Automatic search is
   used only to suggest candidates after an explicit action, because unapproved images
@@ -245,6 +250,9 @@ speaking, adaptive review, daily review, and history.
   server-generated local audio playback, speed control, and word selection.
 - Reading audio now uses selectable macOS `say` voices from the local TTS route, with
   the picker limited to American English voices and novelty/effect voices filtered out.
+- Added an experimental Natural Online audio provider using the Python `edge-tts` CLI.
+  The reader can switch between Local Mac and Natural Online voices, and generated
+  Edge audio is cached as MP3 so repeated playback does not call the online service.
 - Added a separate library/free-reading mode for importing whole books from TXT/PDF
   files, splitting large books into readable parts, and preserving reading progress.
 - Added reading vocabulary saving with sentence context and a personal dictionary for

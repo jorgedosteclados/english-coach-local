@@ -4,6 +4,7 @@
   const playButton = document.getElementById("playReading");
   const previousButton = document.getElementById("previousSentence");
   const nextButton = document.getElementById("nextSentence");
+  const providerSelect = document.getElementById("ttsProvider");
   const rateInput = document.getElementById("readingRate");
   const voiceSelect = document.getElementById("readingVoice");
   const resetSpeechButton = document.getElementById("resetSpeech");
@@ -381,7 +382,8 @@
   function buildTtsUrl(text) {
     const params = new URLSearchParams({
       text,
-      rate: rateInput?.value || "0.9"
+      rate: rateInput?.value || "0.9",
+      provider: getSelectedProvider()
     });
     if (voiceSelect?.value) {
       params.set("voice", voiceSelect.value);
@@ -527,6 +529,13 @@
       return;
     }
 
+    const provider = getSelectedProvider();
+    voiceSelect.innerHTML = "";
+    const loadingOption = document.createElement("option");
+    loadingOption.value = "";
+    loadingOption.textContent = provider === "edge" ? "Loading natural voices..." : "Loading local voices...";
+    voiceSelect.appendChild(loadingOption);
+
     if ("speechSynthesis" in window) {
       browserVoices = window.speechSynthesis
         .getVoices()
@@ -535,7 +544,7 @@
     }
 
     try {
-      const response = await fetch("/reading/tts/voices");
+      const response = await fetch(`/reading/tts/voices?provider=${encodeURIComponent(provider)}`);
       const payload = await response.json();
       availableVoices = payload.voices || [];
     } catch (error) {
@@ -547,7 +556,7 @@
       const option = document.createElement("option");
       option.value = voice.name;
       option.textContent = `${voice.name} (${formatVoiceLang(voice.lang)})${
-        voice.recommended || index === 0 ? " · recommended" : ""
+        voice.recommended || index === 0 ? provider === "edge" ? " · natural" : " · recommended" : ""
       }`;
       voiceSelect.appendChild(option);
     });
@@ -560,9 +569,13 @@
       return;
     }
 
-    const savedVoice = localStorage.getItem("englishCoach.reading.voice");
+    const savedVoice = localStorage.getItem(`englishCoach.reading.voice.${provider}`);
     const selectedVoice = availableVoices.find((voice) => voice.name === savedVoice) || availableVoices[0];
     voiceSelect.value = selectedVoice.name;
+  }
+
+  function getSelectedProvider() {
+    return providerSelect?.value === "edge" ? "edge" : "local";
   }
 
   function formatVoiceLang(lang) {
@@ -632,6 +645,15 @@
   immersiveToggle?.addEventListener("click", () => {
     setImmersiveMode(!document.body.classList.contains("immersive-reading"));
   });
+  providerSelect?.addEventListener("change", async () => {
+    localStorage.setItem("englishCoach.reading.ttsProvider", getSelectedProvider());
+    setSpeechStatus("Loading voices...");
+    await loadVoices();
+    setSpeechStatus("");
+    if (isPlaying) {
+      speak(payload.sentences[currentSentenceIndex]?.text || "");
+    }
+  });
   rateInput?.addEventListener("input", () => {
     localStorage.setItem("englishCoach.reading.rate", rateInput.value);
     if (isPlaying) {
@@ -640,7 +662,7 @@
   });
   completeReadingButton?.addEventListener("click", completeTrailReading);
   voiceSelect?.addEventListener("change", () => {
-    localStorage.setItem("englishCoach.reading.voice", voiceSelect.value);
+    localStorage.setItem(`englishCoach.reading.voice.${getSelectedProvider()}`, voiceSelect.value);
     if (isPlaying) {
       speak(payload.sentences[currentSentenceIndex]?.text || "");
     }
@@ -771,6 +793,10 @@
   const savedRate = localStorage.getItem("englishCoach.reading.rate");
   if (savedRate && rateInput) {
     rateInput.value = savedRate;
+  }
+  const savedProvider = localStorage.getItem("englishCoach.reading.ttsProvider");
+  if (providerSelect && savedProvider) {
+    providerSelect.value = savedProvider === "edge" ? "edge" : "local";
   }
   if ("speechSynthesis" in window) {
     window.speechSynthesis.onvoiceschanged = loadVoices;

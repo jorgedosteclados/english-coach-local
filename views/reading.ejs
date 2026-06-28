@@ -56,6 +56,11 @@
       <button type="button" id="previousSentence" aria-label="Previous sentence">‹</button>
       <button type="button" id="playReading">Play</button>
       <button type="button" id="nextSentence" aria-label="Next sentence">›</button>
+      <label for="ttsProvider">Audio</label>
+      <select id="ttsProvider" aria-label="Audio provider">
+        <option value="local">Local Mac</option>
+        <option value="edge">Natural online</option>
+      </select>
       <label for="readingRate">Speed</label>
       <input id="readingRate" type="range" min="0.5" max="1.6" step="0.1" value="0.9" />
       <label for="readingVoice">Voice</label>

@@ -307,14 +307,15 @@ app.post("/reading/image/approve", async (req, res) => {
 
 app.get("/reading/tts", async (req, res) => {
   try {
-    const filePath = await generateSpeechFile({
+    const audioFile = await generateSpeechFile({
       text: req.query.text,
       rate: req.query.rate,
-      voice: req.query.voice
+      voice: req.query.voice,
+      provider: req.query.provider
     });
 
-    res.type("audio/mp4");
-    res.sendFile(filePath);
+    res.type(audioFile.contentType);
+    res.sendFile(audioFile.filePath);
   } catch (error) {
     console.error("Error generating reading audio:", error.message);
     res.status(error.statusCode || 500).json({ error: "Unable to generate audio." });
@@ -323,7 +324,7 @@ app.get("/reading/tts", async (req, res) => {
 
 app.get("/reading/tts/voices", async (req, res) => {
   try {
-    res.json({ voices: await getAvailableVoices() });
+    res.json({ voices: await getAvailableVoices(req.query.provider) });
   } catch (error) {
     console.error("Error listing reading voices:", error.message);
     res.status(500).json({ error: "Unable to list voices." });

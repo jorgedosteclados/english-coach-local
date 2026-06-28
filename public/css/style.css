@@ -559,10 +559,10 @@ textarea {
   bottom: 0;
   left: 0;
   display: grid;
-  grid-template-columns: 48px minmax(90px, 1fr) 48px 52px minmax(90px, 130px) 46px minmax(140px, 190px) 72px minmax(120px, 1fr);
+  grid-template-columns: 48px minmax(90px, 140px) 48px 44px minmax(112px, 140px) 52px minmax(90px, 130px) 46px minmax(150px, 210px) 72px minmax(100px, 1fr);
   gap: 10px;
   align-items: center;
-  padding: 12px max(14px, calc((100vw - 860px) / 2 + 18px));
+  padding: 12px max(14px, calc((100vw - 1040px) / 2 + 18px));
   border-top: 1px solid #dccfbd;
   background: rgba(255, 250, 242, 0.96);
   backdrop-filter: blur(12px);
@@ -580,10 +580,19 @@ textarea {
   cursor: pointer;
 }
 
+.reading-controls button:hover {
+  background: #17684e;
+}
+
 .reading-controls button:first-child,
 .reading-controls button:nth-child(3) {
   background: #314355;
   font-size: 24px;
+}
+
+.reading-controls button:first-child:hover,
+.reading-controls button:nth-child(3):hover {
+  background: #243648;
 }
 
 .reading-controls label {

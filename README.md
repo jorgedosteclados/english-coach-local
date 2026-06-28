@@ -41,6 +41,18 @@ Reading word images use Openverse by default and are cached locally:
 OPENVERSE_API_URL=https://api.openverse.engineering/v1/images/
 ```
 
+For more natural experimental reading audio, install the Python Edge TTS CLI:
+
+```bash
+python3 -m pip install --user edge-tts
+```
+
+If the `edge-tts` command is not on your PATH, set the command location in `.env`:
+
+```env
+EDGE_TTS_COMMAND=/Users/YOUR_USER/Library/Python/3.9/bin/edge-tts
+```
+
 Then start the app:
 
 ```powershell
