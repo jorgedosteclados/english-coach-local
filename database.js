@@ -140,10 +140,15 @@ db.run(`
     title TEXT,
     creator TEXT,
     license TEXT,
+    approved INTEGER DEFAULT 0,
+    approved_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+db.run("ALTER TABLE reading_image_cache ADD COLUMN approved INTEGER DEFAULT 0", () => {});
+db.run("ALTER TABLE reading_image_cache ADD COLUMN approved_at DATETIME", () => {});
 
 db.run(`
   CREATE TABLE IF NOT EXISTS placement_assessments (

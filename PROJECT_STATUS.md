@@ -195,7 +195,9 @@ Mistakes screen loads only questions due now and reschedules them after review.
   order is personal dictionary, local dictionary, cached translation, optional local
   LibreTranslate, then manual entry.
 - Reading word images should use public/licensed sources and must be cached locally.
-  Abstract/function words should skip image lookup to avoid noisy or misleading results.
+  The reader should show only learner-approved images by default. Automatic search is
+  used only to suggest candidates after an explicit action, because unapproved images
+  can teach the wrong association.
 - All relevant behavior changes must include focused test coverage.
 - Keep the curriculum vendor-neutral. Use generic products, systems, integrations,
   and service scenarios instead of centering the course on one company or platform.
@@ -251,8 +253,9 @@ speaking, adaptive review, daily review, and history.
   saved in `reading_translation_cache` so future lookups are instant.
 - Added optional Openverse image lookup for concrete reading words. Images and source
   attribution are saved in `reading_image_cache`, while abstract/function words skip
-  image lookup. Image search now ranks multiple candidates, ignores older unranked
-  cache entries, and uses query overrides for ambiguous words such as `drills`.
+  image lookup. The reader now shows only approved images automatically; unapproved
+  search results appear as selectable candidates through `Find image`, then the chosen
+  image is stored as approved for future lookups.
 - Documented `LIBRETRANSLATE_URL` in `.env.example` and README. The local machine
   currently uses `http://127.0.0.1:5001` because port `5000` is occupied by macOS.
 - Expanded E2E coverage for local dictionary lookup, user dictionary lookup, optional

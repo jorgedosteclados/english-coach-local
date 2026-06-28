@@ -139,33 +139,60 @@ async function getReadingWordImage(word) {
     return { word: normalizedWord, image: null, source: "skipped" };
   }
 
-  const cachedImage = await getCachedImage(normalizedWord);
+  const cachedImage = await getApprovedImage(normalizedWord);
   if (cachedImage) {
-    return { word: normalizedWord, image: formatImage(cachedImage), source: "cache" };
+    return { word: normalizedWord, image: formatImage(cachedImage), source: "approved" };
   }
 
-  const image = await searchOpenverse(normalizedWord);
-  if (!image) {
-    return { word: normalizedWord, image: null, source: "missing" };
-  }
-
-  await saveCachedImage(normalizedWord, image);
-  return { word: normalizedWord, image, source: "openverse" };
+  return { word: normalizedWord, image: null, source: "needs-approval" };
 }
 
-async function getCachedImage(word) {
+async function getReadingWordImageCandidates(word) {
+  const normalizedWord = normalizeWord(word);
+  if (!shouldLookupImage(normalizedWord)) {
+    return { word: normalizedWord, images: [], source: "skipped" };
+  }
+
+  const images = await searchOpenverseCandidates(normalizedWord);
+  return {
+    word: normalizedWord,
+    images,
+    source: images.length > 0 ? "openverse" : "missing"
+  };
+}
+
+async function approveReadingWordImage({ word, image }) {
+  const normalizedWord = normalizeWord(word);
+  if (!shouldLookupImage(normalizedWord) || !image?.imageUrl) {
+    const error = new Error("Choose a valid image before saving.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const approvedImage = normalizeImagePayload(image, normalizedWord);
+  await saveApprovedImage(normalizedWord, approvedImage);
+
+  return {
+    success: true,
+    word: normalizedWord,
+    image: approvedImage,
+    source: "approved"
+  };
+}
+
+async function getApprovedImage(word) {
   return get(
     `
     SELECT image_url, thumbnail_url, provider, source_url, title, creator, license
     FROM reading_image_cache
     WHERE word = ?
-      AND provider = ?
+      AND approved = 1
     `,
-    [word, CACHE_PROVIDER]
+    [word]
   );
 }
 
-async function saveCachedImage(word, image) {
+async function saveApprovedImage(word, image) {
   await run(
     `
     INSERT INTO reading_image_cache (
@@ -176,9 +203,11 @@ async function saveCachedImage(word, image) {
       source_url,
       title,
       creator,
-      license
+      license,
+      approved,
+      approved_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
     ON CONFLICT(word) DO UPDATE SET
       image_url = excluded.image_url,
       thumbnail_url = excluded.thumbnail_url,
@@ -187,6 +216,8 @@ async function saveCachedImage(word, image) {
       title = excluded.title,
       creator = excluded.creator,
       license = excluded.license,
+      approved = 1,
+      approved_at = CURRENT_TIMESTAMP,
       updated_at = CURRENT_TIMESTAMP
     `,
     [
@@ -202,7 +233,7 @@ async function saveCachedImage(word, image) {
   );
 }
 
-async function searchOpenverse(word) {
+async function searchOpenverseCandidates(word) {
   const apiUrl = process.env.OPENVERSE_API_URL || DEFAULT_OPENVERSE_URL;
   const query = getImageSearchQuery(word);
 
@@ -219,23 +250,12 @@ async function searchOpenverse(word) {
       }
     });
 
-    const result = pickBestImage(response.data?.results || [], word, query);
-    if (!result?.url) {
-      return null;
-    }
-
-    return {
-      imageUrl: result.url,
-      thumbnailUrl: result.thumbnail || result.url,
-      provider: "openverse",
-      sourceUrl: result.foreign_landing_url || result.url,
-      title: result.title || word,
-      creator: result.creator || null,
-      license: result.license || null
-    };
+    return rankImageResults(response.data?.results || [], word, query)
+      .slice(0, 6)
+      .map(({ result }) => formatOpenverseResult(result, word));
   } catch (error) {
     console.warn("Openverse image lookup unavailable:", error.message);
-    return null;
+    return [];
   }
 }
 
@@ -253,13 +273,41 @@ function getImageSearchQuery(word) {
 }
 
 function pickBestImage(results, word, query) {
+  return rankImageResults(results, word, query)[0]?.result;
+}
+
+function rankImageResults(results, word, query) {
   return results
     .filter((result) => result?.url && result.mature !== true)
     .map((result) => ({
       result,
       score: scoreImageResult(result, word, query)
     }))
-    .sort((left, right) => right.score - left.score)[0]?.result;
+    .sort((left, right) => right.score - left.score);
+}
+
+function formatOpenverseResult(result, word) {
+  return {
+    imageUrl: result.url,
+    thumbnailUrl: result.thumbnail || result.url,
+    provider: "openverse",
+    sourceUrl: result.foreign_landing_url || result.url,
+    title: result.title || word,
+    creator: result.creator || null,
+    license: result.license || null
+  };
+}
+
+function normalizeImagePayload(image, word) {
+  return {
+    imageUrl: String(image.imageUrl || "").trim(),
+    thumbnailUrl: String(image.thumbnailUrl || image.imageUrl || "").trim(),
+    provider: String(image.provider || "openverse").trim(),
+    sourceUrl: String(image.sourceUrl || image.imageUrl || "").trim(),
+    title: String(image.title || word).trim(),
+    creator: image.creator ? String(image.creator).trim() : null,
+    license: image.license ? String(image.license).trim() : null
+  };
 }
 
 function scoreImageResult(result, word, query) {
@@ -329,6 +377,8 @@ function formatProvider(provider) {
 }
 
 module.exports = {
+  approveReadingWordImage,
+  getReadingWordImageCandidates,
   getReadingWordImage,
   shouldLookupImage
 };

@@ -19,6 +19,8 @@
   const wordImage = document.getElementById("wordImage");
   const wordImageTitle = document.getElementById("wordImageTitle");
   const wordImageCredit = document.getElementById("wordImageCredit");
+  const findWordImageButton = document.getElementById("findWordImage");
+  const wordImageCandidates = document.getElementById("wordImageCandidates");
   const sentenceLabel = document.getElementById("selectedSentence");
   const speakWordButton = document.getElementById("speakWord");
   const saveWordButton = document.getElementById("saveWord");
@@ -136,6 +138,11 @@
 
   function resetWordImage() {
     wordImageCard.hidden = true;
+    findWordImageButton.hidden = false;
+    findWordImageButton.disabled = false;
+    findWordImageButton.textContent = "Find image";
+    wordImageCandidates.hidden = true;
+    wordImageCandidates.innerHTML = "";
     wordImage.removeAttribute("src");
     wordImage.alt = "";
     wordImageTitle.textContent = "";
@@ -156,6 +163,96 @@
       ? `${image.provider || "image"} · ${image.creator}`
       : image.provider || "image source";
     wordImageCard.hidden = false;
+    findWordImageButton.hidden = true;
+    wordImageCandidates.hidden = true;
+    wordImageCandidates.innerHTML = "";
+  }
+
+  async function findWordImages() {
+    if (!selectedWord) {
+      return;
+    }
+
+    findWordImageButton.disabled = true;
+    findWordImageButton.textContent = "Finding...";
+    wordImageCandidates.hidden = true;
+    wordImageCandidates.innerHTML = "";
+
+    try {
+      const response = await fetch(`/reading/image/candidates?word=${encodeURIComponent(selectedWord)}`);
+      const result = await response.json();
+      if (selectedWord !== result.word) {
+        return;
+      }
+
+      renderImageCandidates(result.images || []);
+    } catch (error) {
+      findWordImageButton.textContent = "Try again";
+    } finally {
+      findWordImageButton.disabled = false;
+      if (findWordImageButton.textContent === "Finding...") {
+        findWordImageButton.textContent = "Find image";
+      }
+    }
+  }
+
+  function renderImageCandidates(images) {
+    if (!images.length) {
+      wordImageCandidates.hidden = false;
+      wordImageCandidates.innerHTML = '<p class="word-image-empty">No useful image found.</p>';
+      findWordImageButton.textContent = "Try again";
+      return;
+    }
+
+    wordImageCandidates.hidden = false;
+    wordImageCandidates.innerHTML = "";
+    images.forEach((image) => {
+      const candidate = document.createElement("button");
+      candidate.type = "button";
+      candidate.className = "word-image-candidate";
+      candidate.innerHTML = `
+        <img src="${escapeAttribute(image.thumbnailUrl || image.imageUrl)}" alt="${escapeAttribute(image.title || selectedWord)}" loading="lazy" />
+        <span>${escapeHtml(image.title || selectedWord)}</span>
+        <small>${escapeHtml(image.creator || image.provider || "image source")}</small>
+      `;
+      candidate.addEventListener("click", () => approveWordImage(image, candidate));
+      wordImageCandidates.appendChild(candidate);
+    });
+  }
+
+  async function approveWordImage(image, candidateEl) {
+    candidateEl.disabled = true;
+    try {
+      const response = await fetch("/reading/image/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          word: selectedWord,
+          image
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to save image.");
+      }
+
+      showWordImage(result.image);
+    } catch (error) {
+      candidateEl.disabled = false;
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function escapeAttribute(value) {
+    return escapeHtml(value);
   }
 
   function speak(text, options = {}) {
@@ -522,6 +619,7 @@
       speak(selectedWord, { advance: false });
     }
   });
+  findWordImageButton.addEventListener("click", findWordImages);
   saveTranslationButton.addEventListener("click", async () => {
     if (!selectedWord) {
       return;

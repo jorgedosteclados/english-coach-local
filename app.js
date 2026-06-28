@@ -21,7 +21,11 @@ const { getDueMistakes } = require("./services/reviewService");
 const { getDashboardData, getDueReviewCount } = require("./services/dashboardService");
 const { getQuestionBankData } = require("./services/questionBankService");
 const { generateSpeechFile } = require("./services/ttsService");
-const { getReadingWordImage } = require("./services/wordImageService");
+const {
+  approveReadingWordImage,
+  getReadingWordImage,
+  getReadingWordImageCandidates
+} = require("./services/wordImageService");
 const {
   createBook,
   deleteBook,
@@ -280,6 +284,24 @@ app.get("/reading/image", async (req, res) => {
   } catch (error) {
     console.error("Error reading word image:", error.message);
     res.status(error.statusCode || 500).json({ error: "Unable to read word image." });
+  }
+});
+
+app.get("/reading/image/candidates", async (req, res) => {
+  try {
+    res.json(await getReadingWordImageCandidates(req.query.word));
+  } catch (error) {
+    console.error("Error reading word image candidates:", error.message);
+    res.status(error.statusCode || 500).json({ error: "Unable to find word images." });
+  }
+});
+
+app.post("/reading/image/approve", async (req, res) => {
+  try {
+    res.json(await approveReadingWordImage(req.body || {}));
+  } catch (error) {
+    console.error("Error approving word image:", error.message);
+    res.status(error.statusCode || 500).json({ error: error.message || "Unable to save image." });
   }
 });
 

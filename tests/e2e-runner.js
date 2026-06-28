@@ -200,17 +200,24 @@ async function main() {
       assert.equal(imageResponse.status(), 200);
       assert.deepEqual(await imageResponse.json(), {
         word: "umbrella",
-        image: {
-          imageUrl: "https://images.example/umbrella-full.jpg",
-          thumbnailUrl: "https://images.example/umbrella-thumb.jpg",
-          provider: "openverse",
-          sourceUrl: "https://commons.example/umbrella",
-          title: "Red umbrella",
-          creator: "Image Maker",
-          license: "cc0"
-        },
-        source: "openverse"
+        image: null,
+        source: "needs-approval"
       });
+      const candidateResponse = await page.request.get(
+        `${baseURL}/reading/image/candidates?word=umbrella`
+      );
+      assert.equal(candidateResponse.status(), 200);
+      const candidatePayload = await candidateResponse.json();
+      assert.equal(candidatePayload.word, "umbrella");
+      assert.equal(candidatePayload.source, "openverse");
+      assert.equal(candidatePayload.images.length, 1);
+      const approveImageResponse = await page.request.post(`${baseURL}/reading/image/approve`, {
+        data: {
+          word: "umbrella",
+          image: candidatePayload.images[0]
+        }
+      });
+      assert.equal(approveImageResponse.status(), 200);
       const cachedImageResponse = await page.request.get(`${baseURL}/reading/image?word=umbrella`);
       assert.equal(cachedImageResponse.status(), 200);
       assert.deepEqual(await cachedImageResponse.json(), {
@@ -224,10 +231,12 @@ async function main() {
           creator: "Image Maker",
           license: "cc0"
         },
-        source: "cache"
+        source: "approved"
       });
       assert.equal(mockImageCalls, 1);
-      const drillImageResponse = await page.request.get(`${baseURL}/reading/image?word=drills`);
+      const drillImageResponse = await page.request.get(
+        `${baseURL}/reading/image/candidates?word=drills`
+      );
       assert.equal(drillImageResponse.status(), 200);
       assert.equal((await drillImageResponse.json()).source, "openverse");
       assert.ok(mockImageQueries.includes("electric drill"));
