@@ -251,7 +251,8 @@ speaking, adaptive review, daily review, and history.
   saved in `reading_translation_cache` so future lookups are instant.
 - Added optional Openverse image lookup for concrete reading words. Images and source
   attribution are saved in `reading_image_cache`, while abstract/function words skip
-  image lookup.
+  image lookup. Image search now ranks multiple candidates, ignores older unranked
+  cache entries, and uses query overrides for ambiguous words such as `drills`.
 - Documented `LIBRETRANSLATE_URL` in `.env.example` and README. The local machine
   currently uses `http://127.0.0.1:5001` because port `5000` is occupied by macOS.
 - Expanded E2E coverage for local dictionary lookup, user dictionary lookup, optional

@@ -3,6 +3,8 @@ const db = require("../database");
 
 const DEFAULT_OPENVERSE_URL = "https://api.openverse.engineering/v1/images/";
 const IMAGE_TIMEOUT_MS = 4500;
+const CACHE_PROVIDER = "openverse-ranked-v2";
+const SEARCH_PAGE_SIZE = 12;
 const ABSTRACT_WORDS = new Set([
   "a",
   "able",
@@ -70,6 +72,29 @@ const ABSTRACT_WORDS = new Set([
   "your",
   "yours"
 ]);
+const VISUAL_QUERY_OVERRIDES = {
+  bike: "bicycle",
+  bikes: "bicycle",
+  drill: "electric drill",
+  drills: "electric drill",
+  mustache: "mustache",
+  moustache: "mustache",
+  screenshot: "computer screenshot"
+};
+const NEGATIVE_TITLE_TERMS = [
+  "advertisement",
+  "album",
+  "book",
+  "cover",
+  "diagram",
+  "festival",
+  "logo",
+  "map",
+  "poster",
+  "sign",
+  "sticker",
+  "text"
+];
 
 function run(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -134,8 +159,9 @@ async function getCachedImage(word) {
     SELECT image_url, thumbnail_url, provider, source_url, title, creator, license
     FROM reading_image_cache
     WHERE word = ?
+      AND provider = ?
     `,
-    [word]
+    [word, CACHE_PROVIDER]
   );
 }
 
@@ -167,7 +193,7 @@ async function saveCachedImage(word, image) {
       word,
       image.imageUrl,
       image.thumbnailUrl || null,
-      image.provider,
+      CACHE_PROVIDER,
       image.sourceUrl || null,
       image.title || null,
       image.creator || null,
@@ -178,12 +204,13 @@ async function saveCachedImage(word, image) {
 
 async function searchOpenverse(word) {
   const apiUrl = process.env.OPENVERSE_API_URL || DEFAULT_OPENVERSE_URL;
+  const query = getImageSearchQuery(word);
 
   try {
     const response = await axios.get(apiUrl, {
       params: {
-        q: word,
-        page_size: 1,
+        q: query,
+        page_size: SEARCH_PAGE_SIZE,
         mature: false
       },
       timeout: Number(process.env.OPENVERSE_TIMEOUT_MS) || IMAGE_TIMEOUT_MS,
@@ -192,7 +219,7 @@ async function searchOpenverse(word) {
       }
     });
 
-    const result = response.data?.results?.[0];
+    const result = pickBestImage(response.data?.results || [], word, query);
     if (!result?.url) {
       return null;
     }
@@ -212,16 +239,93 @@ async function searchOpenverse(word) {
   }
 }
 
+function getImageSearchQuery(word) {
+  if (VISUAL_QUERY_OVERRIDES[word]) {
+    return VISUAL_QUERY_OVERRIDES[word];
+  }
+
+  if (word.endsWith("s") && word.length > 4) {
+    const singular = word.slice(0, -1);
+    return VISUAL_QUERY_OVERRIDES[singular] || singular;
+  }
+
+  return word;
+}
+
+function pickBestImage(results, word, query) {
+  return results
+    .filter((result) => result?.url && result.mature !== true)
+    .map((result) => ({
+      result,
+      score: scoreImageResult(result, word, query)
+    }))
+    .sort((left, right) => right.score - left.score)[0]?.result;
+}
+
+function scoreImageResult(result, word, query) {
+  const title = String(result.title || "").toLowerCase();
+  const provider = String(result.provider || "").toLowerCase();
+  const tags = (result.tags || []).map((tag) => String(tag.name || "").toLowerCase());
+  const queryTerms = query.split(/\s+/).filter(Boolean);
+  let score = 0;
+
+  if (title === query) {
+    score += 35;
+  } else if (title.includes(query)) {
+    score += 24;
+  }
+
+  queryTerms.forEach((term) => {
+    if (title.includes(term)) {
+      score += 8;
+    }
+    if (tags.includes(term)) {
+      score += 5;
+    }
+  });
+
+  if (title.includes(word)) {
+    score += 6;
+  }
+  if (tags.includes(word)) {
+    score += 5;
+  }
+  if (provider === "wikimedia") {
+    score += 5;
+  }
+  if (result.thumbnail) {
+    score += 3;
+  }
+  if (Number(result.width) >= 500 && Number(result.height) >= 350) {
+    score += 2;
+  }
+  if (title.length > 90) {
+    score -= 6;
+  }
+
+  NEGATIVE_TITLE_TERMS.forEach((term) => {
+    if (title.includes(term)) {
+      score -= 10;
+    }
+  });
+
+  return score;
+}
+
 function formatImage(row) {
   return {
     imageUrl: row.image_url,
     thumbnailUrl: row.thumbnail_url || row.image_url,
-    provider: row.provider || "openverse",
+    provider: formatProvider(row.provider),
     sourceUrl: row.source_url,
     title: row.title,
     creator: row.creator,
     license: row.license
   };
+}
+
+function formatProvider(provider) {
+  return String(provider || "openverse").split(":")[0].replace(/-.+$/, "");
 }
 
 module.exports = {

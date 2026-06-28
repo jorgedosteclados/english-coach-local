@@ -19,6 +19,7 @@ let mockTranslator;
 let mockTranslateCalls = 0;
 let mockImageProvider;
 let mockImageCalls = 0;
+let mockImageQueries = [];
 
 const mockQuestions = [
   {
@@ -226,6 +227,10 @@ async function main() {
         source: "cache"
       });
       assert.equal(mockImageCalls, 1);
+      const drillImageResponse = await page.request.get(`${baseURL}/reading/image?word=drills`);
+      assert.equal(drillImageResponse.status(), 200);
+      assert.equal((await drillImageResponse.json()).source, "openverse");
+      assert.ok(mockImageQueries.includes("electric drill"));
       await page.getByRole("button", { name: "Save word" }).click();
       await expectVisibleText(page, "Saved");
       await page.getByRole("button", { name: "Close translation" }).click();
@@ -1154,6 +1159,7 @@ function startMockTranslator() {
 
 function startMockImageProvider() {
   mockImageCalls = 0;
+  mockImageQueries = [];
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://127.0.0.1");
@@ -1164,6 +1170,7 @@ function startMockImageProvider() {
     }
 
     mockImageCalls += 1;
+    mockImageQueries.push(url.searchParams.get("q"));
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
