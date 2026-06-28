@@ -28,6 +28,13 @@ GROQ_API_KEY=...
 OPENROUTER_API_KEY=...
 ```
 
+For offline reading translations without AI tokens, run a local LibreTranslate
+server and keep this URL in `.env`:
+
+```env
+LIBRETRANSLATE_URL=http://127.0.0.1:5000
+```
+
 Then start the app:
 
 ```powershell

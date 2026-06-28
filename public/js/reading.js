@@ -106,7 +106,9 @@
             ? "Your dictionary"
             : result.source === "local"
               ? "Local dictionary"
-              : "Add your translation";
+              : result.source === "libretranslate"
+                ? "LibreTranslate local"
+                : "Add your translation";
         customTranslationInput.value = selectedTranslation || "";
       })
       .catch(() => {

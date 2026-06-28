@@ -15,6 +15,8 @@ const sourceDbPath = path.join(rootDir, "english_coach.db");
 const dbPath = path.join(os.tmpdir(), `english-coach-e2e-${process.pid}.db`);
 const headed = process.env.PLAYWRIGHT_HEADED === "1";
 const visualDelay = headed ? 1200 : 0;
+let mockTranslator;
+let mockTranslateCalls = 0;
 
 const mockQuestions = [
   {
@@ -75,6 +77,7 @@ const mockQuestions = [
 ];
 
 async function main() {
+  mockTranslator = await startMockTranslator();
   const server = await startServer();
   const browser = await chromium.launch({
     headless: !headed,
@@ -163,6 +166,25 @@ async function main() {
         translation: "palavra teste",
         source: "user"
       });
+      const openTranslationResponse = await page.request.get(
+        `${baseURL}/reading/translate?word=wandlight`
+      );
+      assert.equal(openTranslationResponse.status(), 200);
+      assert.deepEqual(await openTranslationResponse.json(), {
+        word: "wandlight",
+        translation: "luz de varinha",
+        source: "libretranslate"
+      });
+      const cachedTranslationResponse = await page.request.get(
+        `${baseURL}/reading/translate?word=wandlight`
+      );
+      assert.equal(cachedTranslationResponse.status(), 200);
+      assert.deepEqual(await cachedTranslationResponse.json(), {
+        word: "wandlight",
+        translation: "luz de varinha",
+        source: "libretranslate"
+      });
+      assert.equal(mockTranslateCalls, 1);
       await page.getByRole("button", { name: "Save word" }).click();
       await expectVisibleText(page, "Saved");
       await page.getByRole("button", { name: "Close translation" }).click();
@@ -992,6 +1014,7 @@ async function main() {
   } finally {
     await browser.close();
     stopServer(server);
+    await closeMockTranslator();
     restoreDatabase();
   }
 
@@ -1036,12 +1059,64 @@ function startServer() {
 
   const server = spawn(process.execPath, ["app.js"], {
     cwd: rootDir,
-    env: { ...process.env, PORT: String(testPort), DATABASE_PATH: dbPath },
+    env: {
+      ...process.env,
+      PORT: String(testPort),
+      DATABASE_PATH: dbPath,
+      LIBRETRANSLATE_URL: mockTranslator.url
+    },
     stdio: "ignore",
     windowsHide: true
   });
 
   return waitForServer().then(() => server);
+}
+
+function startMockTranslator() {
+  mockTranslateCalls = 0;
+
+  const server = http.createServer((req, res) => {
+    if (req.method !== "POST" || req.url !== "/translate") {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      const payload = JSON.parse(body || "{}");
+      mockTranslateCalls += 1;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          translatedText: payload.q === "wandlight" ? "luz de varinha" : `pt:${payload.q}`
+        })
+      );
+    });
+  });
+
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      resolve({
+        server,
+        url: `http://127.0.0.1:${address.port}`
+      });
+    });
+  });
+}
+
+function closeMockTranslator() {
+  if (!mockTranslator?.server) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    mockTranslator.server.close(resolve);
+  });
 }
 
 function prepareTestDatabase() {

@@ -1,6 +1,7 @@
 const db = require("../database");
 const { getTrailReading } = require("../data/trailReadings");
 const { PDFParse } = require("pdf-parse");
+const { translateWithLibreTranslate } = require("./libreTranslateService");
 
 const translations = {
   a: "um / uma",
@@ -341,11 +342,85 @@ async function getReadingTranslation(word) {
   }
 
   const localTranslation = translateLocally(normalizedWord);
+  if (localTranslation) {
+    return {
+      word: normalizedWord,
+      translation: localTranslation,
+      source: "local"
+    };
+  }
+
+  const cachedTranslation = await getCachedTranslation(normalizedWord);
+  if (cachedTranslation) {
+    return {
+      word: normalizedWord,
+      translation: cachedTranslation.translation,
+      source: cachedTranslation.provider || "cache"
+    };
+  }
+
+  const remoteTranslation = await translateWordWithFallback(normalizedWord);
+  if (remoteTranslation) {
+    await saveCachedTranslation({
+      word: normalizedWord,
+      translation: remoteTranslation,
+      provider: "libretranslate"
+    });
+
+    return {
+      word: normalizedWord,
+      translation: remoteTranslation,
+      source: "libretranslate"
+    };
+  }
+
   return {
     word: normalizedWord,
-    translation: localTranslation,
-    source: localTranslation ? "local" : "missing"
+    translation: null,
+    source: "missing"
   };
+}
+
+async function getCachedTranslation(word) {
+  return get(
+    `
+    SELECT translation, provider
+    FROM reading_translation_cache
+    WHERE word = ?
+      AND source_language = 'en'
+      AND target_language = 'pt'
+    `,
+    [word]
+  );
+}
+
+async function saveCachedTranslation({ word, translation, provider }) {
+  await run(
+    `
+    INSERT INTO reading_translation_cache (
+      word,
+      source_language,
+      target_language,
+      translation,
+      provider
+    )
+    VALUES (?, 'en', 'pt', ?, ?)
+    ON CONFLICT(word, source_language, target_language) DO UPDATE SET
+      translation = excluded.translation,
+      provider = excluded.provider,
+      updated_at = CURRENT_TIMESTAMP
+    `,
+    [word, translation, provider]
+  );
+}
+
+async function translateWordWithFallback(word) {
+  try {
+    return await translateWithLibreTranslate(word, { source: "en", target: "pt" });
+  } catch (error) {
+    console.warn("LibreTranslate unavailable:", error.message);
+    return null;
+  }
 }
 
 async function saveUserTranslation({ word, translation }) {

@@ -116,6 +116,20 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS reading_translation_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    word TEXT NOT NULL,
+    source_language TEXT DEFAULT 'en',
+    target_language TEXT DEFAULT 'pt',
+    translation TEXT NOT NULL,
+    provider TEXT DEFAULT 'libretranslate',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(word, source_language, target_language)
+  )
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS placement_assessments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     score INTEGER NOT NULL,
