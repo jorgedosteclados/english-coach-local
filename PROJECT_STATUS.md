@@ -1,6 +1,6 @@
 # English Coach Local - Project Status
 
-Last updated: 2026-06-21
+Last updated: 2026-06-27
 
 This file is the persistent project record. Update it whenever a relevant feature,
 technical decision, data change, test, or roadmap item changes.
@@ -46,6 +46,7 @@ The research-to-feature mapping and starting bibliography are maintained in
 - SQLite local database (`english_coach.db`)
 - Vanilla JavaScript and CSS
 - Gemini, Groq, and optional OpenRouter AI providers
+- Optional local LibreTranslate service for reading lookups without AI tokens
 - Playwright end-to-end tests
 
 ## Implemented Features
@@ -60,6 +61,9 @@ The research-to-feature mapping and starting bibliography are maintained in
 - Visual, listening, and speaking daily review
 - Adaptive mistake review with spaced scheduling
 - A1–B2 placement diagnostic with phase recommendation and skill breakdown
+- Interactive reading mode in the learning path with sentence playback and word lookup
+- Imported book library with PDF/TXT support and free reading mode
+- Reading vocabulary, personal dictionary, local dictionary, and translation cache
 - Local progress, XP, streak, achievements, and history
 - Responsive UI and Mini Beagle Coach mascot
 - Setup instructions for moving the app to another computer
@@ -186,6 +190,9 @@ Mistakes screen loads only questions due now and reschedules them after review.
 - Prefer saved questions over AI to control cost and avoid unnecessary generation.
 - Store AI-generated questions so the question bank grows over time.
 - Keep core practice flows usable even when an AI provider is unavailable.
+- Reading word translation must not use AI providers or paid model tokens. The lookup
+  order is personal dictionary, local dictionary, cached translation, optional local
+  LibreTranslate, then manual entry.
 - All relevant behavior changes must include focused test coverage.
 - Keep the curriculum vendor-neutral. Use generic products, systems, integrations,
   and service scenarios instead of centering the course on one company or platform.
@@ -202,6 +209,7 @@ Mistakes screen loads only questions due now and reschedules them after review.
 5. Add access control before exposing the app through a public tunnel.
 6. Add a question-bank maintenance flow for importing, disabling, editing, or resetting
    specific questions.
+7. Add a one-command local startup helper for the Node app plus LibreTranslate.
 
 ## Verification
 
@@ -224,6 +232,24 @@ speaking, adaptive review, daily review, and history.
   can be reported separately from imported CSV questions.
 - Added E2E coverage proving saved questions are used before AI generation is called,
   and that AI is only requested after a category is exhausted.
+
+### 2026-06-27
+
+- Added interactive reading mode to the learning path with sentence navigation,
+  server-generated local audio playback, speed control, and word selection.
+- Added a separate library/free-reading mode for importing whole books from TXT/PDF
+  files, splitting large books into readable parts, and preserving reading progress.
+- Added reading vocabulary saving with sentence context and a personal dictionary for
+  learner-supplied translations.
+- Added local word translations for common support and reading vocabulary, including
+  core pronouns, possessives, auxiliaries, and high-frequency function words.
+- Added optional LibreTranslate integration for reading word lookups without AI/model
+  tokens. Missing words can be translated through a local LibreTranslate server and
+  saved in `reading_translation_cache` so future lookups are instant.
+- Documented `LIBRETRANSLATE_URL` in `.env.example` and README. The local machine
+  currently uses `http://127.0.0.1:5001` because port `5000` is occupied by macOS.
+- Expanded E2E coverage for local dictionary lookup, user dictionary lookup, optional
+  LibreTranslate lookup, and cache reuse.
 
 ### 2026-06-19
 
