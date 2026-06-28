@@ -64,6 +64,7 @@ The research-to-feature mapping and starting bibliography are maintained in
 - Interactive reading mode in the learning path with sentence playback and word lookup
 - Imported book library with PDF/TXT support and free reading mode
 - Reading vocabulary, personal dictionary, local dictionary, and translation cache
+- Optional visual word lookup with Openverse images cached locally
 - Local progress, XP, streak, achievements, and history
 - Responsive UI and Mini Beagle Coach mascot
 - Setup instructions for moving the app to another computer
@@ -193,6 +194,8 @@ Mistakes screen loads only questions due now and reschedules them after review.
 - Reading word translation must not use AI providers or paid model tokens. The lookup
   order is personal dictionary, local dictionary, cached translation, optional local
   LibreTranslate, then manual entry.
+- Reading word images should use public/licensed sources and must be cached locally.
+  Abstract/function words should skip image lookup to avoid noisy or misleading results.
 - All relevant behavior changes must include focused test coverage.
 - Keep the curriculum vendor-neutral. Use generic products, systems, integrations,
   and service scenarios instead of centering the course on one company or platform.
@@ -246,10 +249,14 @@ speaking, adaptive review, daily review, and history.
 - Added optional LibreTranslate integration for reading word lookups without AI/model
   tokens. Missing words can be translated through a local LibreTranslate server and
   saved in `reading_translation_cache` so future lookups are instant.
+- Added optional Openverse image lookup for concrete reading words. Images and source
+  attribution are saved in `reading_image_cache`, while abstract/function words skip
+  image lookup.
 - Documented `LIBRETRANSLATE_URL` in `.env.example` and README. The local machine
   currently uses `http://127.0.0.1:5001` because port `5000` is occupied by macOS.
 - Expanded E2E coverage for local dictionary lookup, user dictionary lookup, optional
-  LibreTranslate lookup, and cache reuse.
+  LibreTranslate lookup, Openverse image lookup, abstract-word image skipping, and
+  cache reuse.
 
 ### 2026-06-19
 

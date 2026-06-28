@@ -35,6 +35,12 @@ server and keep this URL in `.env`:
 LIBRETRANSLATE_URL=http://127.0.0.1:5000
 ```
 
+Reading word images use Openverse by default and are cached locally:
+
+```env
+OPENVERSE_API_URL=https://api.openverse.engineering/v1/images/
+```
+
 Then start the app:
 
 ```powershell

@@ -15,6 +15,10 @@
   const translationSource = document.getElementById("translationSource");
   const customTranslationInput = document.getElementById("customTranslation");
   const saveTranslationButton = document.getElementById("saveTranslation");
+  const wordImageCard = document.getElementById("wordImageCard");
+  const wordImage = document.getElementById("wordImage");
+  const wordImageTitle = document.getElementById("wordImageTitle");
+  const wordImageCredit = document.getElementById("wordImageCredit");
   const sentenceLabel = document.getElementById("selectedSentence");
   const speakWordButton = document.getElementById("speakWord");
   const saveWordButton = document.getElementById("saveWord");
@@ -90,6 +94,7 @@
     customTranslationInput.value = localHint || "";
     sentenceLabel.textContent = sentence;
     selectedTranslation = localHint || null;
+    resetWordImage();
     sheet.hidden = false;
 
     fetch(`/reading/translate?word=${encodeURIComponent(selectedWord)}`)
@@ -116,6 +121,41 @@
         translationLabel.textContent = selectedTranslation || "No translation saved yet";
         translationSource.textContent = selectedTranslation ? "Local dictionary" : "Add your translation";
       });
+
+    fetch(`/reading/image?word=${encodeURIComponent(selectedWord)}`)
+      .then((response) => response.json())
+      .then((result) => {
+        if (selectedWord !== result.word || !result.image) {
+          return;
+        }
+
+        showWordImage(result.image);
+      })
+      .catch(() => {});
+  }
+
+  function resetWordImage() {
+    wordImageCard.hidden = true;
+    wordImage.removeAttribute("src");
+    wordImage.alt = "";
+    wordImageTitle.textContent = "";
+    wordImageCredit.href = "#";
+  }
+
+  function showWordImage(image) {
+    const imageUrl = image.thumbnailUrl || image.imageUrl;
+    if (!imageUrl) {
+      return;
+    }
+
+    wordImage.src = imageUrl;
+    wordImage.alt = image.title || selectedWord;
+    wordImageTitle.textContent = image.title || selectedWord;
+    wordImageCredit.href = image.sourceUrl || image.imageUrl;
+    wordImageCredit.textContent = image.creator
+      ? `${image.provider || "image"} · ${image.creator}`
+      : image.provider || "image source";
+    wordImageCard.hidden = false;
   }
 
   function speak(text, options = {}) {

@@ -17,6 +17,8 @@ const headed = process.env.PLAYWRIGHT_HEADED === "1";
 const visualDelay = headed ? 1200 : 0;
 let mockTranslator;
 let mockTranslateCalls = 0;
+let mockImageProvider;
+let mockImageCalls = 0;
 
 const mockQuestions = [
   {
@@ -78,6 +80,7 @@ const mockQuestions = [
 
 async function main() {
   mockTranslator = await startMockTranslator();
+  mockImageProvider = await startMockImageProvider();
   const server = await startServer();
   const browser = await chromium.launch({
     headless: !headed,
@@ -185,6 +188,44 @@ async function main() {
         source: "libretranslate"
       });
       assert.equal(mockTranslateCalls, 1);
+      const skippedImageResponse = await page.request.get(`${baseURL}/reading/image?word=his`);
+      assert.equal(skippedImageResponse.status(), 200);
+      assert.deepEqual(await skippedImageResponse.json(), {
+        word: "his",
+        image: null,
+        source: "skipped"
+      });
+      const imageResponse = await page.request.get(`${baseURL}/reading/image?word=umbrella`);
+      assert.equal(imageResponse.status(), 200);
+      assert.deepEqual(await imageResponse.json(), {
+        word: "umbrella",
+        image: {
+          imageUrl: "https://images.example/umbrella-full.jpg",
+          thumbnailUrl: "https://images.example/umbrella-thumb.jpg",
+          provider: "openverse",
+          sourceUrl: "https://commons.example/umbrella",
+          title: "Red umbrella",
+          creator: "Image Maker",
+          license: "cc0"
+        },
+        source: "openverse"
+      });
+      const cachedImageResponse = await page.request.get(`${baseURL}/reading/image?word=umbrella`);
+      assert.equal(cachedImageResponse.status(), 200);
+      assert.deepEqual(await cachedImageResponse.json(), {
+        word: "umbrella",
+        image: {
+          imageUrl: "https://images.example/umbrella-full.jpg",
+          thumbnailUrl: "https://images.example/umbrella-thumb.jpg",
+          provider: "openverse",
+          sourceUrl: "https://commons.example/umbrella",
+          title: "Red umbrella",
+          creator: "Image Maker",
+          license: "cc0"
+        },
+        source: "cache"
+      });
+      assert.equal(mockImageCalls, 1);
       await page.getByRole("button", { name: "Save word" }).click();
       await expectVisibleText(page, "Saved");
       await page.getByRole("button", { name: "Close translation" }).click();
@@ -1015,6 +1056,7 @@ async function main() {
     await browser.close();
     stopServer(server);
     await closeMockTranslator();
+    await closeMockImageProvider();
     restoreDatabase();
   }
 
@@ -1063,7 +1105,8 @@ function startServer() {
       ...process.env,
       PORT: String(testPort),
       DATABASE_PATH: dbPath,
-      LIBRETRANSLATE_URL: mockTranslator.url
+      LIBRETRANSLATE_URL: mockTranslator.url,
+      OPENVERSE_API_URL: mockImageProvider.url
     },
     stdio: "ignore",
     windowsHide: true
@@ -1106,6 +1149,56 @@ function startMockTranslator() {
         url: `http://127.0.0.1:${address.port}`
       });
     });
+  });
+}
+
+function startMockImageProvider() {
+  mockImageCalls = 0;
+
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url, "http://127.0.0.1");
+    if (req.method !== "GET" || url.pathname !== "/images") {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+
+    mockImageCalls += 1;
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        results: [
+          {
+            url: "https://images.example/umbrella-full.jpg",
+            thumbnail: "https://images.example/umbrella-thumb.jpg",
+            foreign_landing_url: "https://commons.example/umbrella",
+            title: "Red umbrella",
+            creator: "Image Maker",
+            license: "cc0"
+          }
+        ]
+      })
+    );
+  });
+
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      resolve({
+        server,
+        url: `http://127.0.0.1:${address.port}/images`
+      });
+    });
+  });
+}
+
+function closeMockImageProvider() {
+  if (!mockImageProvider?.server) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    mockImageProvider.server.close(resolve);
   });
 }
 

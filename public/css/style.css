@@ -574,6 +574,49 @@ textarea {
   line-height: 1.45;
 }
 
+.word-image-card {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 10px;
+  border: 1px solid #e4d8c8;
+  border-radius: 8px;
+  background: #fffaf2;
+}
+
+.word-image-card[hidden] {
+  display: none;
+}
+
+.word-image-card img {
+  width: 140px;
+  height: 96px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #eef2f6;
+}
+
+.word-image-card figcaption {
+  min-width: 0;
+}
+
+.word-image-card figcaption span {
+  display: block;
+  margin-bottom: 6px;
+  color: #17212b;
+  font-size: 15px;
+  line-height: 1.3;
+  text-transform: none;
+}
+
+.word-image-card a {
+  color: #1c7d60;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .word-translation-editor {
   margin-bottom: 14px;
 }
@@ -790,6 +833,15 @@ textarea {
 
   .word-translation-editor button {
     width: 100%;
+  }
+
+  .word-image-card {
+    grid-template-columns: 1fr;
+  }
+
+  .word-image-card img {
+    width: 100%;
+    height: 160px;
   }
 
   .reading-sentence {

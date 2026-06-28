@@ -130,6 +130,22 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS reading_image_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    word TEXT NOT NULL UNIQUE,
+    image_url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    provider TEXT DEFAULT 'openverse',
+    source_url TEXT,
+    title TEXT,
+    creator TEXT,
+    license TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS placement_assessments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     score INTEGER NOT NULL,
