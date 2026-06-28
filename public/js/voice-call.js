@@ -15,6 +15,8 @@ const callTurnCount = document.getElementById("callTurnCount");
 const callFeedback = document.getElementById("callFeedback");
 const callFeedbackContent = document.getElementById("callFeedbackContent");
 const scenarioSelect = document.getElementById("scenarioSelect");
+const typedCallReply = document.getElementById("typedCallReply");
+const sendTypedReplyBtn = document.getElementById("sendTypedReplyBtn");
 
 const messages = [
   {
@@ -25,6 +27,7 @@ const messages = [
 
 let recognition = null;
 let currentAudio = null;
+let currentSpeechUtterance = null;
 let callStarted = false;
 let isListening = false;
 let isWaitingForCustomer = false;
@@ -38,11 +41,17 @@ startCallBtn.addEventListener("click", () => {
   callStarted = true;
   startCallBtn.disabled = true;
   speakCallBtn.disabled = !recognition;
+  typedCallReply.disabled = false;
+  sendTypedReplyBtn.disabled = false;
   endCallBtn.disabled = false;
   setCallStatus("In call", "active");
   callTranscript.textContent = "Tap Speak and answer the customer.";
   renderThread();
-  playCustomerLine(lastCustomerReply);
+  playCustomerLine(lastCustomerReply).then(() => {
+    if (callStarted && !isWaitingForCustomer && !isListening) {
+      setCallStatus("Your turn", "active");
+    }
+  });
 });
 
 speakCallBtn.addEventListener("click", () => {
@@ -57,10 +66,20 @@ endCallBtn.addEventListener("click", () => {
   finishCall();
 });
 
+sendTypedReplyBtn.addEventListener("click", () => {
+  sendTypedReply();
+});
+
+typedCallReply.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    sendTypedReply();
+  }
+});
+
 function setupRecognition() {
   if (!SpeechRecognition) {
     speakCallBtn.disabled = true;
-    showSupportMessage("Speech recognition is not available in this browser. Try Chrome or Edge.");
+    showSupportMessage("Speech recognition is not available in this browser. You can type your reply.");
     return;
   }
 
@@ -79,11 +98,11 @@ function setupRecognition() {
     setListening(false);
 
     if (event.error === "not-allowed") {
-      showSupportMessage("Microphone access was blocked. Allow microphone access and try again.");
+      showSupportMessage("Microphone access was blocked. You can type your reply below.");
       return;
     }
 
-    showSupportMessage("I could not hear that clearly. Try again in a quieter place.");
+    showSupportMessage("I could not hear that clearly. Try again or type your reply below.");
   });
 
   recognition.addEventListener("end", () => {
@@ -103,22 +122,36 @@ function startRecognition() {
 }
 
 async function handleSupportReply(transcript) {
-  if (!transcript) {
+  const cleanTranscript = String(transcript || "").trim();
+
+  if (!cleanTranscript) {
     showSupportMessage("No speech detected. Try again.");
     return;
   }
 
   messages.push({
     role: "support",
-    content: transcript
+    content: cleanTranscript
   });
+  typedCallReply.value = "";
+  callTranscript.textContent = cleanTranscript;
   renderThread();
   await requestCustomerReply();
+}
+
+function sendTypedReply() {
+  if (!callStarted || isWaitingForCustomer) {
+    return;
+  }
+
+  handleSupportReply(typedCallReply.value);
 }
 
 async function requestCustomerReply() {
   isWaitingForCustomer = true;
   speakCallBtn.disabled = true;
+  sendTypedReplyBtn.disabled = true;
+  typedCallReply.disabled = true;
   setCallStatus("Customer is replying...", "thinking");
 
   try {
@@ -151,6 +184,7 @@ async function requestCustomerReply() {
       content: lastCustomerReply
     });
     renderThread();
+    setCallStatus("Playing customer voice...", "thinking");
     await playCustomerLine(lastCustomerReply);
     if (!callStarted) {
       return;
@@ -163,12 +197,14 @@ async function requestCustomerReply() {
   } finally {
     isWaitingForCustomer = false;
     speakCallBtn.disabled = !callStarted || !recognition;
+    typedCallReply.disabled = !callStarted;
+    sendTypedReplyBtn.disabled = !callStarted;
   }
 }
 
 async function playCustomerLine(text) {
   if (!text) {
-    return;
+    return false;
   }
 
   stopCurrentAudio();
@@ -180,18 +216,76 @@ async function playCustomerLine(text) {
     text
   });
 
-  currentAudio = new Audio(`/reading/tts?${params.toString()}`);
+  const audio = new Audio(`/reading/tts?${params.toString()}`);
+  currentAudio = audio;
+
+  const audioStarted = new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error("Generated audio timed out."));
+    }, 18000);
+
+    audio.addEventListener(
+      "playing",
+      () => {
+        window.clearTimeout(timeoutId);
+        resolve(true);
+      },
+      { once: true }
+    );
+
+    audio.addEventListener(
+      "error",
+      () => {
+        window.clearTimeout(timeoutId);
+        reject(new Error("Generated audio failed."));
+      },
+      { once: true }
+    );
+  });
 
   try {
-    await currentAudio.play();
+    await audio.play();
+    await audioStarted;
+    return true;
   } catch (error) {
     console.error(error);
-    showSupportMessage("Audio playback was blocked. Use Listen again to play the customer voice.");
+    stopCurrentAudio();
+    return speakWithBrowserVoice(text);
   }
+}
+
+function speakWithBrowserVoice(text) {
+  if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
+    showSupportMessage("Audio playback is unavailable. Read the customer reply on screen.");
+    return false;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  const englishVoice = window.speechSynthesis
+    .getVoices()
+    .find((voice) => voice.lang && voice.lang.toLowerCase().startsWith("en-us"));
+
+  if (englishVoice) {
+    utterance.voice = englishVoice;
+  }
+
+  utterance.lang = "en-US";
+  utterance.rate = 0.92;
+  utterance.pitch = 1;
+  currentSpeechUtterance = utterance;
+  window.speechSynthesis.speak(utterance);
+  showSupportMessage("Using browser voice fallback for this reply.");
+  return true;
 }
 
 function stopCurrentAudio() {
   if (!currentAudio) {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    currentSpeechUtterance = null;
     return;
   }
 
@@ -199,6 +293,11 @@ function stopCurrentAudio() {
   currentAudio.removeAttribute("src");
   currentAudio.load();
   currentAudio = null;
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+  currentSpeechUtterance = null;
 }
 
 async function finishCall() {
@@ -212,6 +311,8 @@ async function finishCall() {
   isWaitingForCustomer = false;
   speakCallBtn.textContent = "Speak";
   speakCallBtn.disabled = true;
+  typedCallReply.disabled = true;
+  sendTypedReplyBtn.disabled = true;
   endCallBtn.disabled = true;
   startCallBtn.disabled = false;
   setCallStatus("Call ended", "ended");
@@ -286,6 +387,8 @@ function setListening(nextListeningState) {
   isListening = nextListeningState;
   speakCallBtn.textContent = isListening ? "Listening..." : "Speak";
   speakCallBtn.disabled = isListening || isWaitingForCustomer || !callStarted;
+  sendTypedReplyBtn.disabled = isWaitingForCustomer || !callStarted;
+  typedCallReply.disabled = isWaitingForCustomer || !callStarted;
   if (!callStarted) {
     return;
   }

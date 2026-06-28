@@ -1926,6 +1926,42 @@ button:hover {
   line-height: 1.45;
 }
 
+.voice-call-typed-reply {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid #dfd3c3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.voice-call-typed-reply label {
+  grid-column: 1 / -1;
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.voice-call-typed-reply textarea {
+  min-height: 58px;
+  margin: 0;
+  resize: vertical;
+}
+
+.voice-call-typed-reply button {
+  min-height: 58px;
+  margin: 0;
+}
+
+.voice-call-typed-reply textarea:disabled,
+.voice-call-typed-reply button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .speaking-card {
   display: flex;
   flex-direction: column;
@@ -4160,6 +4196,10 @@ button.coach-step:hover {
     padding-right: 10px;
     padding-left: 10px;
     font-size: 14px;
+  }
+
+  .voice-call-typed-reply {
+    grid-template-columns: 1fr;
   }
 
   .speaking-feedback-summary {

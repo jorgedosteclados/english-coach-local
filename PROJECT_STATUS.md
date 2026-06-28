@@ -279,6 +279,9 @@ speaking, adaptive review, daily review, and history.
 - Added `/voice-call` for simulated professional support calls with browser speech
   recognition, local Ollama customer replies, Edge TTS customer audio, scenario
   selection, and end-of-call feedback.
+- Added voice-call fallbacks: if browser speech recognition is unavailable, the learner
+  can send a typed reply; if generated customer audio does not play, the app falls back
+  to the browser's built-in speech synthesis.
 - Added Ollama configuration to `.env.example` and README. The recommended local model
   for a 16 GB MacBook Air M3 is `qwen3:8b`.
 

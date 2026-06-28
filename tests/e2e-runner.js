@@ -951,14 +951,16 @@ async function main() {
       await page.addInitScript(() => {
         window.__audioEvents = [];
 
-        class FakeAudio {
+        class FakeAudio extends EventTarget {
           constructor(src) {
+            super();
             this.src = src;
             window.__audioEvents.push({ event: "construct", src });
           }
 
           play() {
             window.__audioEvents.push({ event: "play", src: this.src });
+            this.dispatchEvent(new Event("playing"));
             return Promise.resolve();
           }
 
@@ -967,15 +969,13 @@ async function main() {
           load() {}
         }
 
-        class FakeSpeechRecognition extends EventTarget {
-          start() {
-            window.__recognition = this;
-          }
-        }
-
         Object.defineProperty(window, "Audio", { value: FakeAudio, configurable: true });
+        Object.defineProperty(window, "webkitSpeechRecognition", {
+          value: undefined,
+          configurable: true
+        });
         Object.defineProperty(window, "SpeechRecognition", {
-          value: FakeSpeechRecognition,
+          value: undefined,
           configurable: true
         });
       });
@@ -985,12 +985,9 @@ async function main() {
       await expectVisibleText(page, "Support Call");
       await expectVisibleText(page, "Save Error");
       await page.getByRole("button", { name: "Start call" }).click();
-      await page.getByRole("button", { name: "Speak" }).click();
-      await page.evaluate(() => {
-        const event = new Event("result");
-        event.results = [[{ transcript: "Could you please share the exact error message?" }]];
-        window.__recognition.dispatchEvent(event);
-      });
+      await expectVisibleText(page, "You can type your reply");
+      await page.getByLabel("Typed reply").fill("Could you please share the exact error message?");
+      await page.getByRole("button", { name: "Send typed reply" }).click();
 
       await expectVisibleText(page, "I am using Chrome");
       assert.equal(
