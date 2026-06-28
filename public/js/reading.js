@@ -36,6 +36,7 @@
   let selectedTranslation = null;
   let isPlaying = false;
   let availableVoices = [];
+  let browserVoices = [];
   let speechRunId = 0;
   let speechStartTimer = null;
   let speechFallbackTimer = null;
@@ -372,6 +373,9 @@
       text,
       rate: rateInput?.value || "0.9"
     });
+    if (voiceSelect?.value) {
+      params.set("voice", voiceSelect.value);
+    }
 
     return `/reading/tts?${params.toString()}`;
   }
@@ -508,21 +512,33 @@
     return true;
   }
 
-  function loadVoices() {
-    if (!("speechSynthesis" in window) || !voiceSelect) {
+  async function loadVoices() {
+    if (!voiceSelect) {
       return;
     }
 
-    availableVoices = window.speechSynthesis
-      .getVoices()
-      .filter((voice) => /^en(-|_)/i.test(voice.lang || ""))
-      .sort((first, second) => scoreVoice(second) - scoreVoice(first));
+    if ("speechSynthesis" in window) {
+      browserVoices = window.speechSynthesis
+        .getVoices()
+        .filter((voice) => /^en(-|_)/i.test(voice.lang || ""))
+        .sort((first, second) => scoreVoice(second) - scoreVoice(first));
+    }
+
+    try {
+      const response = await fetch("/reading/tts/voices");
+      const payload = await response.json();
+      availableVoices = payload.voices || [];
+    } catch (error) {
+      availableVoices = browserVoices;
+    }
 
     voiceSelect.innerHTML = "";
     availableVoices.forEach((voice, index) => {
       const option = document.createElement("option");
       option.value = voice.name;
-      option.textContent = `${voice.name} (${voice.lang})${index === 0 ? " · best" : ""}`;
+      option.textContent = `${voice.name} (${formatVoiceLang(voice.lang)})${
+        voice.recommended || index === 0 ? " · recommended" : ""
+      }`;
       voiceSelect.appendChild(option);
     });
 
@@ -539,14 +555,19 @@
     voiceSelect.value = selectedVoice.name;
   }
 
+  function formatVoiceLang(lang) {
+    return String(lang || "en_US").replace("_", "-");
+  }
+
   function getSelectedVoice() {
-    if (!availableVoices.length) {
+    const voicePool = browserVoices.length ? browserVoices : availableVoices;
+    if (!voicePool.length) {
       return null;
     }
 
     return (
-      availableVoices.find((voice) => voice.name === voiceSelect?.value) ||
-      availableVoices[0] ||
+      voicePool.find((voice) => voice.name === voiceSelect?.value) ||
+      voicePool[0] ||
       null
     );
   }

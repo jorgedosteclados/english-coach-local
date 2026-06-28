@@ -242,6 +242,8 @@ speaking, adaptive review, daily review, and history.
 
 - Added interactive reading mode to the learning path with sentence navigation,
   server-generated local audio playback, speed control, and word selection.
+- Reading audio now uses selectable macOS `say` voices from the local TTS route, with
+  the picker limited to American English voices and novelty/effect voices filtered out.
 - Added a separate library/free-reading mode for importing whole books from TXT/PDF
   files, splitting large books into readable parts, and preserving reading progress.
 - Added reading vocabulary saving with sentence context and a personal dictionary for

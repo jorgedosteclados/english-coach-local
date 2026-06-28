@@ -20,7 +20,7 @@ const {
 const { getDueMistakes } = require("./services/reviewService");
 const { getDashboardData, getDueReviewCount } = require("./services/dashboardService");
 const { getQuestionBankData } = require("./services/questionBankService");
-const { generateSpeechFile } = require("./services/ttsService");
+const { generateSpeechFile, getAvailableVoices } = require("./services/ttsService");
 const {
   approveReadingWordImage,
   getReadingWordImage,
@@ -309,7 +309,8 @@ app.get("/reading/tts", async (req, res) => {
   try {
     const filePath = await generateSpeechFile({
       text: req.query.text,
-      rate: req.query.rate
+      rate: req.query.rate,
+      voice: req.query.voice
     });
 
     res.type("audio/mp4");
@@ -317,6 +318,15 @@ app.get("/reading/tts", async (req, res) => {
   } catch (error) {
     console.error("Error generating reading audio:", error.message);
     res.status(error.statusCode || 500).json({ error: "Unable to generate audio." });
+  }
+});
+
+app.get("/reading/tts/voices", async (req, res) => {
+  try {
+    res.json({ voices: await getAvailableVoices() });
+  } catch (error) {
+    console.error("Error listing reading voices:", error.message);
+    res.status(500).json({ error: "Unable to list voices." });
   }
 });
 
