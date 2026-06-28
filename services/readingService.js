@@ -5,44 +5,88 @@ const { PDFParse } = require("pdf-parse");
 const translations = {
   account: "conta",
   after: "depois",
+  although: "embora",
+  anything: "qualquer coisa",
   another: "outro",
   as: "assim / como",
+  bag: "bolsa / saco",
   before: "antes",
+  because: "porque",
+  bike: "bicicleta",
+  big: "grande",
   cause: "causa",
+  catch: "pegar / alcançar",
   check: "verificar",
+  course: "claro / curso",
   confirm: "confirmar",
   contacting: "entrar em contato",
   could: "poderia",
+  "couldn't": "não conseguia / não podia",
   customer: "cliente",
   details: "detalhes",
+  director: "diretor",
+  dudley: "Dudley (nome próprio)",
   error: "erro",
+  exactly: "exatamente",
+  exercise: "exercício",
   exact: "exato",
+  expect: "esperar / esperar que",
+  favorite: "favorito",
+  fat: "gordo",
+  firm: "empresa",
   found: "encontramos",
+  grunnings: "Grunnings (nome próprio)",
+  harry: "Harry (nome próprio)",
+  hardly: "mal / quase não",
+  hated: "odiava",
   help: "ajudar",
+  him: "ele / o",
+  hold: "segurar / conter",
   informed: "informado",
   internal: "interno",
   investigating: "investigando",
+  involved: "envolvia / envolvido",
   issue: "problema",
   know: "saber / avisar",
+  last: "último",
+  made: "fazia / feito",
+  man: "homem",
   message: "mensagem",
+  mysterious: "misterioso",
+  mystery: "mistério",
+  neck: "pescoço",
+  nonsense: "bobagem / absurdo",
+  normal: "normal",
+  often: "frequentemente",
   patience: "paciencia",
+  perfectly: "perfeitamente",
   please: "por favor",
+  privet: "Privet (nome da rua)",
   problem: "problema",
+  proud: "orgulhoso",
+  punching: "socar / socando",
+  racing: "corrida",
   reliable: "confiavel",
   request: "solicitacao",
   review: "revisar",
+  say: "dizer",
   screenshot: "captura de tela",
   send: "enviar",
   settings: "configuracoes",
   share: "compartilhar",
   solution: "solucao",
+  somebody: "alguém",
+  strange: "estranho",
   support: "suporte",
   team: "equipe",
   technical: "tecnico",
+  unless: "a menos que",
   update: "atualizacao",
   urgency: "urgencia",
   user: "usuario",
+  wanted: "queria",
   while: "enquanto",
+  why: "por que",
   would: "iria / ajudaria"
 };
 
@@ -163,6 +207,9 @@ function splitOversizedUnit(text, wordsPerPart) {
 function normalizeText(text) {
   return String(text || "")
     .replace(/\r\n/g, "\n")
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/\s+'\s*/g, "'")
     .replace(/\t/g, " ")
     .replace(/\s*-+\s*\d+\s+of\s+\d+\s*-+\s*/gi, "\n")
     .replace(/[ ]{2,}/g, " ")
@@ -184,6 +231,44 @@ function splitSentences(text) {
 
 function tokenizeSentence(sentence) {
   return sentence.match(/[A-Za-z]+(?:'[A-Za-z]+)?|\d+|[^\sA-Za-z\d]/g) || [];
+}
+
+function translateLocally(word) {
+  const normalizedWord = normalizeWord(word);
+  if (!normalizedWord) {
+    return null;
+  }
+
+  if (translations[normalizedWord]) {
+    return translations[normalizedWord];
+  }
+
+  const singular = normalizedWord.endsWith("s") ? normalizedWord.slice(0, -1) : null;
+  if (singular && translations[singular]) {
+    return translations[singular];
+  }
+
+  const withoutEd = normalizedWord.endsWith("ed") ? normalizedWord.slice(0, -2) : null;
+  if (withoutEd && translations[withoutEd]) {
+    return translations[withoutEd];
+  }
+
+  const withoutIng = normalizedWord.endsWith("ing") ? normalizedWord.slice(0, -3) : null;
+  if (withoutIng && translations[withoutIng]) {
+    return translations[withoutIng];
+  }
+
+  return null;
+}
+
+function getLocalTranslation(word) {
+  const normalizedWord = normalizeWord(word);
+
+  return {
+    word: normalizedWord,
+    translation: translateLocally(normalizedWord),
+    source: "local"
+  };
 }
 
 function buildReaderPayload(reading, progress = {}) {
@@ -475,11 +560,13 @@ module.exports = {
   deleteBook,
   extractUploadText,
   getBookReader,
+  getLocalTranslation,
   getTrailReader,
   listBooks,
   saveProgress,
   saveVocabulary,
   splitChapters,
   splitSentences,
+  translateLocally,
   tokenizeSentence
 };

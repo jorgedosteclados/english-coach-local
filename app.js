@@ -26,6 +26,7 @@ const {
   deleteBook,
   extractUploadText,
   getBookReader,
+  getLocalTranslation,
   getTrailReader,
   listBooks,
   saveProgress,
@@ -249,6 +250,10 @@ app.post("/reading/vocabulary", async (req, res) => {
     console.error("Error saving reading vocabulary:", error.message);
     res.status(error.statusCode || 500).json({ error: error.message || "Unable to save word." });
   }
+});
+
+app.get("/reading/translate", (req, res) => {
+  res.json(getLocalTranslation(req.query.word));
 });
 
 app.get("/reading/tts", async (req, res) => {

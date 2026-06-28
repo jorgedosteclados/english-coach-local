@@ -78,12 +78,25 @@
   function openWord(word, sentence) {
     selectedWord = normalizeWord(word);
     selectedSentence = sentence;
-    const translation = payload.translationHints[selectedWord] || "To translate with AI/dictionary later";
+    const localHint = payload.translationHints[selectedWord];
 
     wordLabel.textContent = word;
-    translationLabel.textContent = translation;
+    translationLabel.textContent = localHint || "Looking up...";
     sentenceLabel.textContent = sentence;
     sheet.hidden = false;
+
+    fetch(`/reading/translate?word=${encodeURIComponent(selectedWord)}`)
+      .then((response) => response.json())
+      .then((result) => {
+        if (selectedWord !== result.word) {
+          return;
+        }
+
+        translationLabel.textContent = result.translation || "No local translation yet";
+      })
+      .catch(() => {
+        translationLabel.textContent = localHint || "No local translation yet";
+      });
   }
 
   function speak(text, options = {}) {
