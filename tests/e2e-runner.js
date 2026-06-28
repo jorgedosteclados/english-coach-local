@@ -90,7 +90,7 @@ async function main() {
         activitiesCompleted: 3,
         streakDays: 3
       });
-      await seedUnitProgress([1, 2, 3]);
+      await seedUnitProgress([1, 25, 2, 3]);
 
       const page = await newPage(browser);
       await page.goto(baseURL);
@@ -98,7 +98,7 @@ async function main() {
       await expectVisibleText(page, "Support Foundations");
       await expectVisibleText(page, "Customer Conversation");
       await expectVisibleText(page, "Daily Review");
-      await expectVisibleText(page, "3 of 24 units completed");
+      await expectVisibleText(page, "4 of 25 units completed");
       await expectVisibleText(page, "Your badges");
       await page.getByRole("button", { name: "Sound effects are on" }).click();
       await page.locator("#soundVolume").fill("25");
@@ -132,6 +132,79 @@ async function main() {
       await page.waitForURL(`${baseURL}/`);
       await expectVisibleText(page, "Support Foundations");
       await pause();
+      await page.close();
+    });
+
+    await run(results, "interactive reading opens trail text and imports a book", async () => {
+      const page = await newPage(browser);
+
+      await page.goto(`${baseURL}/reading?unit=25`);
+      await expectVisibleText(page, "A Clear First Reply");
+      await expectVisibleText(page, "Unit 2 Reading");
+      await page.getByRole("button", { name: "issue", exact: true }).first().click();
+      await expectVisibleText(page, "problema");
+      await page.getByRole("button", { name: "Save word" }).click();
+      await expectVisibleText(page, "Saved");
+      await page.getByRole("button", { name: "Close translation" }).click();
+      await page.locator(".reading-sentence").nth(2).click();
+      assert.equal(
+        await page.locator(".reading-sentence.active").textContent(),
+        "Could you please send me more details about the problem?"
+      );
+      await page.locator("#readingRate").fill("1.4");
+      assert.equal(
+        await page.evaluate(() => localStorage.getItem("englishCoach.reading.rate")),
+        "1.4"
+      );
+      if (await page.locator("#wordSheet").isVisible()) {
+        await page.getByRole("button", { name: "Close translation" }).click();
+      }
+
+      const progressResponse = await page.request.post(`${baseURL}/reading/progress`, {
+        data: {
+          sourceType: "trail",
+          sourceId: "25",
+          chapterIndex: 0,
+          sentenceIndex: 2
+        }
+      });
+      assert.equal(progressResponse.status(), 200);
+
+      await page.getByRole("button", { name: "Complete reading" }).click();
+      await expectVisibleText(page, "Reading complete");
+      await expectVisibleText(page, "Progress saved. You earned 10 XP.");
+      assert.equal(
+        await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
+        "/conversation?unit=4"
+      );
+
+      await page.goto(`${baseURL}/library`);
+      await expectVisibleText(page, "Your Library");
+      await page.getByLabel("Title").fill("Support Stories");
+      await page.getByLabel("PDF or TXT file").setInputFiles({
+        name: "support-stories.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from(
+          [
+          "Chapter 1",
+          "The customer opened a new support ticket. I checked the error message and asked for more details.",
+          "",
+          "Chapter 2",
+          "The team reviewed the logs. We found the cause and shared a clear update with the customer."
+          ].join("\n")
+        )
+      });
+      await page.getByRole("button", { name: "Import and read" }).click();
+      await page.waitForURL("**/reading/book/*");
+      await expectVisibleText(page, "Support Stories");
+      await expectVisibleText(page, "Chapter 1");
+      await expectVisibleText(page, "1/2");
+      await page.getByRole("button", { name: "customer", exact: true }).first().click();
+      await expectVisibleText(page, "cliente");
+
+      await page.goto(`${baseURL}/library`);
+      await expectVisibleText(page, "Support Stories");
+      await expectVisibleText(page, "2 chapters");
       await page.close();
     });
 
@@ -190,7 +263,7 @@ async function main() {
       await page.waitForURL("**/lesson?unit=16&category=tone");
       await page.goto(baseURL);
       assert.equal(await page.locator(".coach-step.placement-skipped").count(), 15);
-      await expectVisibleText(page, "3 of 24 units completed");
+      await expectVisibleText(page, "4 of 25 units completed");
       await clearLearningPreference();
       await page.close();
     });

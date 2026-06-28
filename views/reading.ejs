@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= reader.title %> · Reading Mode</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="reading-page">
+  <main class="reading-shell">
+    <header class="reading-topbar">
+      <a href="<%= reader.sourceType === 'book' ? '/library' : '/' %>" aria-label="Back">‹</a>
+      <div>
+        <span><%= reader.sourceType === 'book' ? 'Library reading' : reader.unitLabel || 'Guided reading' %></span>
+        <h1><%= reader.title %></h1>
+      </div>
+      <a href="/library" aria-label="Library">B</a>
+    </header>
+
+    <section class="reading-status" aria-label="Reading status">
+      <div>
+        <span><%= reader.level %></span>
+        <strong><%= reader.sourceType === 'book' ? reader.chapterTitle : reader.summary %></strong>
+      </div>
+      <% if (reader.sourceType === 'book') { %>
+        <nav class="reading-chapters" aria-label="Book chapters">
+          <% if (reader.chapterIndex > 0) { %>
+            <a href="/reading/book/<%= reader.bookId %>?chapter=<%= reader.chapterIndex - 1 %>">Previous</a>
+          <% } %>
+          <span><%= reader.chapterIndex + 1 %>/<%= reader.totalChapters %></span>
+          <% if (reader.chapterIndex + 1 < reader.totalChapters) { %>
+            <a href="/reading/book/<%= reader.bookId %>?chapter=<%= reader.chapterIndex + 1 %>">Next</a>
+          <% } %>
+        </nav>
+      <% } %>
+    </section>
+
+    <section class="reading-player" aria-label="Interactive text">
+      <div id="readingText" class="reading-text"></div>
+    </section>
+
+    <% if (reader.sourceType === 'trail') { %>
+      <section class="reading-completion" id="readingCompletion">
+        <div>
+          <span>Finish the lesson</span>
+          <strong>Complete this guided reading to earn 10 XP.</strong>
+        </div>
+        <button type="button" id="completeReading">Complete reading</button>
+      </section>
+    <% } %>
+
+    <section class="reading-controls" aria-label="Reading controls">
+      <button type="button" id="previousSentence" aria-label="Previous sentence">‹</button>
+      <button type="button" id="playReading">Play</button>
+      <button type="button" id="nextSentence" aria-label="Next sentence">›</button>
+      <label for="readingRate">Speed</label>
+      <input id="readingRate" type="range" min="0.5" max="1.6" step="0.1" value="0.9" />
+      <label for="readingVoice">Voice</label>
+      <select id="readingVoice" aria-label="Reading voice">
+        <option value="">Best available voice</option>
+      </select>
+      <button type="button" id="resetSpeech" aria-label="Reset audio">Reset</button>
+      <span id="speechStatus" class="speech-status" aria-live="polite"></span>
+    </section>
+  </main>
+
+  <aside id="wordSheet" class="word-sheet" aria-live="polite" hidden>
+    <button type="button" id="closeWordSheet" aria-label="Close translation">×</button>
+    <span id="selectedWordLabel">Word</span>
+    <strong id="selectedTranslation">Translation</strong>
+    <p id="selectedSentence"></p>
+    <div class="word-sheet-actions">
+      <button type="button" id="speakWord">Listen</button>
+      <button type="button" id="saveWord">Save word</button>
+    </div>
+  </aside>
+
+  <script>
+    window.readingPayload = <%- readerJson %>;
+  </script>
+  <script src="/js/reading.js"></script>
+</body>
+</html>

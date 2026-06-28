@@ -49,6 +49,61 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS reading_books (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    source_label TEXT DEFAULT 'Pasted text',
+    total_chapters INTEGER DEFAULT 1,
+    total_words INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS reading_chapters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id INTEGER NOT NULL,
+    chapter_index INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    word_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(book_id, chapter_index),
+    FOREIGN KEY (book_id) REFERENCES reading_books(id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS reading_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER DEFAULT 1,
+    source_type TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    chapter_index INTEGER DEFAULT 0,
+    sentence_index INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, source_type, source_id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS reading_vocabulary (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER DEFAULT 1,
+    word TEXT NOT NULL,
+    translation TEXT,
+    source_type TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    sentence TEXT,
+    saved_count INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, word)
+  )
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS placement_assessments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     score INTEGER NOT NULL,

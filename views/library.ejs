@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading Library · English Coach</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="library-page">
+  <main class="library-shell">
+    <header class="library-header">
+      <a href="/" aria-label="Back to learning path">‹</a>
+      <div>
+        <span>Interactive reading</span>
+        <h1>Your Library</h1>
+      </div>
+    </header>
+
+    <section class="library-actions">
+      <a href="/reading?unit=25">Open trail reading</a>
+    </section>
+
+    <section class="library-import">
+      <div class="library-section-heading">
+        <span>Import</span>
+        <h2>Add a full book or long text</h2>
+      </div>
+      <% if (error) { %>
+        <p class="library-error"><%= error %></p>
+      <% } %>
+      <form action="/library/import" method="post" enctype="multipart/form-data" id="bookImportForm">
+        <label for="bookTitle">Title</label>
+        <input id="bookTitle" name="title" type="text" placeholder="Example: Short Stories in English" />
+
+        <label for="bookFile">PDF or TXT file</label>
+        <input id="bookFile" name="bookFile" type="file" accept=".pdf,.txt,application/pdf,text/plain" />
+
+        <label for="bookText">Book text</label>
+        <textarea
+          id="bookText"
+          name="bookText"
+          rows="12"
+          placeholder="Paste an English book, chapter, or long article here, or upload a PDF/TXT file above."
+        ></textarea>
+
+        <p class="library-import-status" id="bookImportStatus" role="status" aria-live="polite"></p>
+        <button type="submit" id="bookImportButton">Import and read</button>
+      </form>
+    </section>
+
+    <section class="library-books">
+      <div class="library-section-heading">
+        <span>Books</span>
+        <h2>Continue reading</h2>
+      </div>
+
+      <% if (books.length === 0) { %>
+        <p class="library-empty">No books imported yet.</p>
+      <% } %>
+
+      <div class="library-book-list">
+        <% books.forEach((book) => { %>
+          <article class="library-book">
+            <a href="/reading/book/<%= book.id %>?chapter=<%= book.chapter_index || 0 %>">
+              <span><%= book.total_chapters %> chapter<%= book.total_chapters === 1 ? '' : 's' %></span>
+              <strong><%= book.title %></strong>
+              <small><%= book.total_words %> words · sentence <%= (book.sentence_index || 0) + 1 %></small>
+            </a>
+            <form action="/library/books/<%= book.id %>/delete" method="post" class="library-delete-form">
+              <button type="submit">Delete</button>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/library.js"></script>
+</body>
+</html>

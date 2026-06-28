@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const multer = require("multer");
 const path = require("path");
 const db = require("./database");
 const { buildAchievements } = require("./services/achievementService");
@@ -19,6 +20,17 @@ const {
 const { getDueMistakes } = require("./services/reviewService");
 const { getDashboardData, getDueReviewCount } = require("./services/dashboardService");
 const { getQuestionBankData } = require("./services/questionBankService");
+const { generateSpeechFile } = require("./services/ttsService");
+const {
+  createBook,
+  deleteBook,
+  extractUploadText,
+  getBookReader,
+  getTrailReader,
+  listBooks,
+  saveProgress,
+  saveVocabulary
+} = require("./services/readingService");
 const {
   applyPlacementRecommendation,
   getPublicQuestions,
@@ -26,6 +38,21 @@ const {
 } = require("./services/placementService");
 const { skillMatrix, levelMatrix } = require("./data/pedagogy");
 const PORT = Number(process.env.PORT) || 3000;
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (req, file, callback) => {
+    const filename = String(file.originalname || "").toLowerCase();
+    const mimetype = String(file.mimetype || "").toLowerCase();
+    const isSupported =
+      mimetype === "application/pdf" ||
+      mimetype.startsWith("text/") ||
+      filename.endsWith(".pdf") ||
+      filename.endsWith(".txt");
+
+    callback(isSupported ? null : new Error("Upload a PDF or TXT file."), isSupported);
+  }
+});
 
 const learningPathMetadata = new Map(learningPathUnits.map((unit) => [unit.id, unit]));
 
@@ -45,8 +72,8 @@ const defaultProgress = {
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/ai", aiRoutes);
 
@@ -174,6 +201,120 @@ app.get("/lesson", (req, res) => {
 app.get("/review", (req, res) => {
   res.render("review", { reviewCards: visualReviewCards });
 });
+
+app.get("/reading", async (req, res) => {
+  try {
+    const unitId = getRequestedUnitId(req, 1);
+    const reader = await getTrailReader(unitId);
+    res.render("reading", {
+      reader,
+      readerJson: JSON.stringify(reader).replace(/</g, "\\u003c")
+    });
+  } catch (error) {
+    console.error("Error loading trail reading:", error.message);
+    res.status(500).send("Unable to load reading mode right now.");
+  }
+});
+
+app.get("/reading/book/:id", async (req, res) => {
+  try {
+    const chapterIndex = Number(req.query.chapter);
+    const reader = await getBookReader(
+      Number(req.params.id),
+      Number.isFinite(chapterIndex) ? chapterIndex : undefined
+    );
+    res.render("reading", {
+      reader,
+      readerJson: JSON.stringify(reader).replace(/</g, "\\u003c")
+    });
+  } catch (error) {
+    console.error("Error loading book reader:", error.message);
+    res.status(error.statusCode || 500).send(error.message || "Unable to load this book.");
+  }
+});
+
+app.post("/reading/progress", async (req, res) => {
+  try {
+    res.json(await saveProgress(req.body || {}));
+  } catch (error) {
+    console.error("Error saving reading progress:", error.message);
+    res.status(error.statusCode || 500).json({ error: "Unable to save reading progress." });
+  }
+});
+
+app.post("/reading/vocabulary", async (req, res) => {
+  try {
+    res.json(await saveVocabulary(req.body || {}));
+  } catch (error) {
+    console.error("Error saving reading vocabulary:", error.message);
+    res.status(error.statusCode || 500).json({ error: error.message || "Unable to save word." });
+  }
+});
+
+app.get("/reading/tts", async (req, res) => {
+  try {
+    const filePath = await generateSpeechFile({
+      text: req.query.text,
+      rate: req.query.rate
+    });
+
+    res.type("audio/mp4");
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error("Error generating reading audio:", error.message);
+    res.status(error.statusCode || 500).json({ error: "Unable to generate audio." });
+  }
+});
+
+app.get("/library", async (req, res) => {
+  try {
+    res.render("library", { books: await listBooks(), error: null });
+  } catch (error) {
+    console.error("Error loading library:", error.message);
+    res.status(500).send("Unable to load your library right now.");
+  }
+});
+
+app.post("/library/import", (req, res) => {
+  upload.single("bookFile")(req, res, async (uploadError) => {
+    if (uploadError) {
+      await renderLibraryImportError(res, uploadError);
+      return;
+    }
+
+    try {
+      const uploadedText = await extractUploadText(req.file);
+      const text = uploadedText || req.body?.bookText;
+      const fileTitle = req.file?.originalname?.replace(/\.[^.]+$/, "");
+      const bookId = await createBook({
+        title: req.body?.title || fileTitle,
+        text,
+        sourceLabel: req.file ? `${req.file.originalname}` : "Pasted text"
+      });
+      res.redirect(`/reading/book/${bookId}`);
+    } catch (error) {
+      console.error("Error importing book:", error.message);
+      await renderLibraryImportError(res, error);
+    }
+  });
+});
+
+app.post("/library/books/:id/delete", async (req, res) => {
+  try {
+    await deleteBook(req.params.id);
+    res.redirect("/library");
+  } catch (error) {
+    console.error("Error deleting book:", error.message);
+    await renderLibraryImportError(res, error);
+  }
+});
+
+async function renderLibraryImportError(res, error) {
+  res.status(error.statusCode || 400).render("library", {
+    books: await listBooks().catch(() => []),
+    error: error.message || "Unable to import this book."
+  });
+}
 
 app.get("/mistakes", async (req, res) => {
   try {

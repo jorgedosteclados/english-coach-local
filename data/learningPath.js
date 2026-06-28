@@ -5,6 +5,7 @@ const learningPathSections = [
     description: "Build the core language for clear and polite customer support.",
     units: [
       unit(1, "Support Basics", "Practice useful phrases for everyday support.", "lesson", "/lesson?unit=1&category=request-info"),
+      unit(25, "Guided Reading", "Read a short support reply with audio and word help.", "reading", "/reading?unit=25"),
       unit(2, "Ask for Details", "Write clear requests for the information you need.", "writing", "/writing?unit=2"),
       unit(3, "Correct and Improve", "Turn common mistakes into natural English.", "correction", "/correct?unit=3"),
       unit(4, "Customer Conversation", "Handle a short conversation with a customer.", "conversation", "/conversation?unit=4"),
