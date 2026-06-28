@@ -141,6 +141,13 @@ async function main() {
       await page.goto(`${baseURL}/reading?unit=25`);
       await expectVisibleText(page, "A Clear First Reply");
       await expectVisibleText(page, "Unit 2 Reading");
+      const localPronounResponse = await page.request.get(`${baseURL}/reading/translate?word=his`);
+      assert.equal(localPronounResponse.status(), 200);
+      assert.deepEqual(await localPronounResponse.json(), {
+        word: "his",
+        translation: "dele / seu",
+        source: "local"
+      });
       await page.getByRole("button", { name: "issue", exact: true }).first().click();
       await expectVisibleText(page, "problema");
       const translationResponse = await page.request.post(`${baseURL}/reading/translation`, {
