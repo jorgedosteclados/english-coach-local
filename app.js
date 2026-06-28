@@ -26,10 +26,11 @@ const {
   deleteBook,
   extractUploadText,
   getBookReader,
-  getLocalTranslation,
+  getReadingTranslation,
   getTrailReader,
   listBooks,
   saveProgress,
+  saveUserTranslation,
   saveVocabulary
 } = require("./services/readingService");
 const {
@@ -252,8 +253,24 @@ app.post("/reading/vocabulary", async (req, res) => {
   }
 });
 
-app.get("/reading/translate", (req, res) => {
-  res.json(getLocalTranslation(req.query.word));
+app.get("/reading/translate", async (req, res) => {
+  try {
+    res.json(await getReadingTranslation(req.query.word));
+  } catch (error) {
+    console.error("Error reading translation:", error.message);
+    res.status(error.statusCode || 500).json({ error: "Unable to read translation." });
+  }
+});
+
+app.post("/reading/translation", async (req, res) => {
+  try {
+    res.json(await saveUserTranslation(req.body || {}));
+  } catch (error) {
+    console.error("Error saving reading translation:", error.message);
+    res
+      .status(error.statusCode || 500)
+      .json({ error: error.message || "Unable to save translation." });
+  }
 });
 
 app.get("/reading/tts", async (req, res) => {

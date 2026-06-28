@@ -271,6 +271,71 @@ function getLocalTranslation(word) {
   };
 }
 
+async function getReadingTranslation(word) {
+  const normalizedWord = normalizeWord(word);
+  if (!normalizedWord) {
+    return { word: "", translation: null, source: "missing" };
+  }
+
+  const userEntry = await get(
+    `
+    SELECT translation
+    FROM reading_user_dictionary
+    WHERE user_id = 1
+      AND word = ?
+    `,
+    [normalizedWord]
+  );
+
+  if (userEntry?.translation) {
+    return {
+      word: normalizedWord,
+      translation: userEntry.translation,
+      source: "user"
+    };
+  }
+
+  const localTranslation = translateLocally(normalizedWord);
+  return {
+    word: normalizedWord,
+    translation: localTranslation,
+    source: localTranslation ? "local" : "missing"
+  };
+}
+
+async function saveUserTranslation({ word, translation }) {
+  const normalizedWord = normalizeWord(word);
+  const cleanedTranslation = String(translation || "").trim();
+
+  if (!normalizedWord || !cleanedTranslation) {
+    const error = new Error("Add a word and a translation before saving.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await run(
+    `
+    INSERT INTO reading_user_dictionary (
+      user_id,
+      word,
+      translation
+    )
+    VALUES (1, ?, ?)
+    ON CONFLICT(user_id, word) DO UPDATE SET
+      translation = excluded.translation,
+      updated_at = CURRENT_TIMESTAMP
+    `,
+    [normalizedWord, cleanedTranslation]
+  );
+
+  return {
+    success: true,
+    word: normalizedWord,
+    translation: cleanedTranslation,
+    source: "user"
+  };
+}
+
 function buildReaderPayload(reading, progress = {}) {
   const sentences = splitSentences(reading.text).map((sentence, sentenceIndex) => ({
     id: sentenceIndex,
@@ -485,6 +550,8 @@ async function saveVocabulary({ sourceType, sourceId, word, sentence, translatio
     throw error;
   }
 
+  const savedTranslation = translation || (await getReadingTranslation(normalizedWord)).translation;
+
   await run(
     `
     INSERT INTO reading_vocabulary (
@@ -506,7 +573,7 @@ async function saveVocabulary({ sourceType, sourceId, word, sentence, translatio
     `,
     [
       normalizedWord,
-      translation || translations[normalizedWord] || null,
+      savedTranslation || null,
       sourceType,
       String(sourceId),
       sentence || null
@@ -561,9 +628,11 @@ module.exports = {
   extractUploadText,
   getBookReader,
   getLocalTranslation,
+  getReadingTranslation,
   getTrailReader,
   listBooks,
   saveProgress,
+  saveUserTranslation,
   saveVocabulary,
   splitChapters,
   splitSentences,

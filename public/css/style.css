@@ -560,10 +560,52 @@ textarea {
   font-size: 26px;
 }
 
+.word-sheet small {
+  display: block;
+  margin-top: 4px;
+  color: #6b7785;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .word-sheet p {
   margin: 10px 0 14px;
   color: #53606c;
   line-height: 1.45;
+}
+
+.word-translation-editor {
+  margin-bottom: 14px;
+}
+
+.word-translation-editor label {
+  display: block;
+  margin-bottom: 6px;
+  color: #8a5a2b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.word-translation-editor > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.word-translation-editor input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #d7c8b5;
+  border-radius: 8px;
+  color: #17212b;
+  font: inherit;
+}
+
+.word-translation-editor button {
+  min-height: 44px;
+  white-space: nowrap;
 }
 
 .word-sheet-actions {
@@ -739,6 +781,14 @@ textarea {
 
   .reading-completion button,
   .reading-completion a {
+    width: 100%;
+  }
+
+  .word-translation-editor > div {
+    grid-template-columns: 1fr;
+  }
+
+  .word-translation-editor button {
     width: 100%;
   }
 

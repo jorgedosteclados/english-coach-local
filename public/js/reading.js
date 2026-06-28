@@ -12,6 +12,9 @@
   const closeSheetButton = document.getElementById("closeWordSheet");
   const wordLabel = document.getElementById("selectedWordLabel");
   const translationLabel = document.getElementById("selectedTranslation");
+  const translationSource = document.getElementById("translationSource");
+  const customTranslationInput = document.getElementById("customTranslation");
+  const saveTranslationButton = document.getElementById("saveTranslation");
   const sentenceLabel = document.getElementById("selectedSentence");
   const speakWordButton = document.getElementById("speakWord");
   const saveWordButton = document.getElementById("saveWord");
@@ -24,6 +27,7 @@
       : Math.min(payload.progress?.sentenceIndex || 0, Math.max(payload.sentences.length - 1, 0));
   let selectedWord = null;
   let selectedSentence = null;
+  let selectedTranslation = null;
   let isPlaying = false;
   let availableVoices = [];
   let speechRunId = 0;
@@ -82,7 +86,10 @@
 
     wordLabel.textContent = word;
     translationLabel.textContent = localHint || "Looking up...";
+    translationSource.textContent = localHint ? "Local dictionary" : "Looking up";
+    customTranslationInput.value = localHint || "";
     sentenceLabel.textContent = sentence;
+    selectedTranslation = localHint || null;
     sheet.hidden = false;
 
     fetch(`/reading/translate?word=${encodeURIComponent(selectedWord)}`)
@@ -92,10 +99,20 @@
           return;
         }
 
-        translationLabel.textContent = result.translation || "No local translation yet";
+        selectedTranslation = result.translation || null;
+        translationLabel.textContent = selectedTranslation || "No translation saved yet";
+        translationSource.textContent =
+          result.source === "user"
+            ? "Your dictionary"
+            : result.source === "local"
+              ? "Local dictionary"
+              : "Add your translation";
+        customTranslationInput.value = selectedTranslation || "";
       })
       .catch(() => {
-        translationLabel.textContent = localHint || "No local translation yet";
+        selectedTranslation = localHint || null;
+        translationLabel.textContent = selectedTranslation || "No translation saved yet";
+        translationSource.textContent = selectedTranslation ? "Local dictionary" : "Add your translation";
       });
   }
 
@@ -463,11 +480,52 @@
       speak(selectedWord, { advance: false });
     }
   });
+  saveTranslationButton.addEventListener("click", async () => {
+    if (!selectedWord) {
+      return;
+    }
+
+    const translation = customTranslationInput.value.trim();
+    if (!translation) {
+      customTranslationInput.focus();
+      return;
+    }
+
+    saveTranslationButton.disabled = true;
+    saveTranslationButton.textContent = "Saving...";
+    try {
+      const response = await fetch("/reading/translation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          word: selectedWord,
+          translation
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to save translation.");
+      }
+
+      selectedTranslation = result.translation;
+      translationLabel.textContent = result.translation;
+      translationSource.textContent = "Your dictionary";
+      saveTranslationButton.textContent = "Saved";
+      setTimeout(() => {
+        saveTranslationButton.textContent = "Save translation";
+      }, 900);
+    } catch (error) {
+      saveTranslationButton.textContent = "Try again";
+    } finally {
+      saveTranslationButton.disabled = false;
+    }
+  });
   saveWordButton.addEventListener("click", async () => {
     if (!selectedWord) {
       return;
     }
 
+    const typedTranslation = customTranslationInput.value.trim();
     saveWordButton.disabled = true;
     saveWordButton.textContent = "Saved";
     await fetch("/reading/vocabulary", {
@@ -478,7 +536,7 @@
         sourceId: payload.sourceType === "book" ? payload.bookId : payload.unitId,
         word: selectedWord,
         sentence: selectedSentence,
-        translation: payload.translationHints[selectedWord] || null
+        translation: selectedTranslation || typedTranslation || null
       })
     }).catch(() => {});
     setTimeout(() => {

@@ -68,7 +68,15 @@
     <button type="button" id="closeWordSheet" aria-label="Close translation">×</button>
     <span id="selectedWordLabel">Word</span>
     <strong id="selectedTranslation">Translation</strong>
+    <small id="translationSource">Dictionary</small>
     <p id="selectedSentence"></p>
+    <div class="word-translation-editor">
+      <label for="customTranslation">Your translation</label>
+      <div>
+        <input id="customTranslation" type="text" autocomplete="off" placeholder="Add Portuguese translation" />
+        <button type="button" id="saveTranslation">Save translation</button>
+      </div>
+    </div>
     <div class="word-sheet-actions">
       <button type="button" id="speakWord">Listen</button>
       <button type="button" id="saveWord">Save word</button>

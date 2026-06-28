@@ -104,6 +104,18 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS reading_user_dictionary (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER DEFAULT 1,
+    word TEXT NOT NULL,
+    translation TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, word)
+  )
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS placement_assessments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     score INTEGER NOT NULL,

@@ -143,6 +143,19 @@ async function main() {
       await expectVisibleText(page, "Unit 2 Reading");
       await page.getByRole("button", { name: "issue", exact: true }).first().click();
       await expectVisibleText(page, "problema");
+      const translationResponse = await page.request.post(`${baseURL}/reading/translation`, {
+        data: { word: "muggleword", translation: "palavra teste" }
+      });
+      assert.equal(translationResponse.status(), 200);
+      const savedTranslationResponse = await page.request.get(
+        `${baseURL}/reading/translate?word=muggleword`
+      );
+      assert.equal(savedTranslationResponse.status(), 200);
+      assert.deepEqual(await savedTranslationResponse.json(), {
+        word: "muggleword",
+        translation: "palavra teste",
+        source: "user"
+      });
       await page.getByRole("button", { name: "Save word" }).click();
       await expectVisibleText(page, "Saved");
       await page.getByRole("button", { name: "Close translation" }).click();
