@@ -53,6 +53,23 @@ If the `edge-tts` command is not on your PATH, set the command location in `.env
 EDGE_TTS_COMMAND=/Users/YOUR_USER/Library/Python/3.9/bin/edge-tts
 ```
 
+For local AI voice-call simulations without online AI tokens, install Ollama and
+pull the recommended local model:
+
+```bash
+brew install ollama
+brew services start ollama
+ollama pull qwen3:8b
+```
+
+Then keep the local API settings in `.env`:
+
+```env
+OLLAMA_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen3:8b
+OLLAMA_TIMEOUT_MS=45000
+```
+
 Then start the app:
 
 ```powershell

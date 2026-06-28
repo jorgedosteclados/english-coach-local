@@ -7,7 +7,9 @@ const {
   buildCorrectionPrompt,
   buildConversationFeedbackPrompt,
   buildConversationMessagePrompt,
-  buildSpeakingFeedbackPrompt
+  buildSpeakingFeedbackPrompt,
+  buildSupportCallFeedbackPrompt,
+  buildSupportCallMessagePrompt
 } = require("../services/promptService");
 const { getLessonQuestion } = require("../services/questionService");
 const { saveProgress } = require("../services/progressService");
@@ -135,6 +137,58 @@ router.post("/speaking-feedback", async (req, res) => {
     console.error("Speaking feedback failed:", error.message);
     res.status(500).json({
       error: "Error generating speaking feedback."
+    });
+  }
+});
+
+router.post("/support-call-message", async (req, res) => {
+  try {
+    const { scenario, customerProfile, messages } = req.body;
+
+    if (!Array.isArray(messages)) {
+      return res.status(400).json({
+        error: "Call messages are required."
+      });
+    }
+
+    const reply = await generateAIResponse(
+      buildSupportCallMessagePrompt({ scenario, customerProfile, messages }),
+      { provider: "ollama", localOnly: true }
+    );
+
+    res.json({
+      reply: reply.trim()
+    });
+  } catch (error) {
+    console.error("Support call message failed:", error.message);
+    res.status(500).json({
+      error: "Local AI is unavailable. Make sure Ollama is running."
+    });
+  }
+});
+
+router.post("/support-call-feedback", async (req, res) => {
+  try {
+    const { scenario, messages } = req.body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({
+        error: "Call messages are required."
+      });
+    }
+
+    const feedback = await generateAIResponse(
+      buildSupportCallFeedbackPrompt({ scenario, messages }),
+      { provider: "ollama", localOnly: true }
+    );
+
+    res.json({
+      result: feedback
+    });
+  } catch (error) {
+    console.error("Support call feedback failed:", error.message);
+    res.status(500).json({
+      error: "Local AI feedback is unavailable. Make sure Ollama is running."
     });
   }
 });

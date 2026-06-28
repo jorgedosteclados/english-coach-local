@@ -1762,6 +1762,170 @@ button:hover {
   color: #027a48;
 }
 
+.voice-call-page {
+  max-width: 980px;
+}
+
+.voice-call-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.voice-call-header h1 {
+  margin: 4px 0 8px;
+  font-size: clamp(34px, 6vw, 58px);
+  line-height: 1;
+}
+
+.voice-call-header p {
+  margin: 0;
+  color: #475467;
+  line-height: 1.45;
+}
+
+.voice-call-scenario-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voice-call-scenario-form label {
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.voice-call-scenario-form select {
+  min-height: 52px;
+}
+
+.voice-call-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 28px;
+  border: 1px solid #dfd3c3;
+  border-radius: 8px;
+  background: #fffdfa;
+  box-shadow: 0 18px 42px rgba(54, 37, 20, 0.08);
+}
+
+.voice-call-status {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: #344054;
+  font-weight: 800;
+}
+
+.voice-call-status span {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #98a2b3;
+}
+
+.voice-call-status span.active,
+.voice-call-status span.listening {
+  background: #23845d;
+}
+
+.voice-call-status span.thinking {
+  background: #d68a20;
+}
+
+.voice-call-status span.error {
+  background: #b42318;
+}
+
+.voice-call-status span.ended {
+  background: #344054;
+}
+
+.voice-call-stage {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  min-height: 170px;
+  padding: 24px;
+  border-radius: 8px;
+  background: #eef8f4;
+  border-left: 7px solid #23845d;
+}
+
+.voice-call-avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #29455f;
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 900;
+}
+
+.voice-call-stage p {
+  margin: 0;
+  color: #182230;
+  font-size: clamp(26px, 5vw, 42px);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.voice-call-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.voice-call-controls button {
+  min-height: 58px;
+}
+
+.voice-call-controls button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.danger-btn {
+  background: #b42318;
+  color: #ffffff;
+}
+
+.danger-btn:hover {
+  background: #912018;
+}
+
+.voice-call-transcript {
+  padding: 16px;
+  border: 1px solid #dfd3c3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.voice-call-transcript span {
+  display: block;
+  margin-bottom: 8px;
+  color: #8b5e34;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.voice-call-transcript p {
+  margin: 0;
+  color: #475467;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
 .speaking-card {
   display: flex;
   flex-direction: column;
@@ -3970,6 +4134,34 @@ button.coach-step:hover {
 }
 
 @media (max-width: 420px) {
+  .voice-call-header {
+    grid-template-columns: 1fr;
+  }
+
+  .voice-call-shell {
+    padding: 18px;
+  }
+
+  .voice-call-stage {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .voice-call-stage p {
+    font-size: 25px;
+  }
+
+  .voice-call-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .voice-call-controls button {
+    min-height: 54px;
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 14px;
+  }
+
   .speaking-feedback-summary {
     grid-template-columns: 68px 1fr;
   }

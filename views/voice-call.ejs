@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support Voice Call</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container voice-call-page">
+    <a href="/" class="back-link">Back to Home</a>
+
+    <section class="voice-call-header">
+      <div>
+        <p class="mission-label">Support Call</p>
+        <h1><%= scenario.title %></h1>
+        <p><%= scenario.scenario %></p>
+      </div>
+      <form method="get" action="/voice-call" class="voice-call-scenario-form">
+        <label for="scenarioSelect">Scenario</label>
+        <select id="scenarioSelect" name="scenario">
+          <% scenarios.forEach((item) => { %>
+            <option value="<%= item.id %>" <%= item.id === scenario.id ? "selected" : "" %>>
+              <%= item.title %> - <%= item.level %>
+            </option>
+          <% }) %>
+        </select>
+      </form>
+    </section>
+
+    <section class="voice-call-shell">
+      <div class="voice-call-status">
+        <span id="callStatusDot"></span>
+        <strong id="callStatus">Ready</strong>
+      </div>
+
+      <div class="voice-call-stage">
+        <div class="voice-call-avatar">C</div>
+        <p id="currentCustomerLine"><%= scenario.initialMessage %></p>
+      </div>
+
+      <div class="voice-call-controls">
+        <button id="startCallBtn" type="button">Start call</button>
+        <button id="speakCallBtn" type="button" class="secondary-btn" disabled>Speak</button>
+        <button id="replayCustomerBtn" type="button" class="secondary-btn">Listen again</button>
+        <button id="endCallBtn" type="button" class="danger-btn" disabled>End call</button>
+      </div>
+
+      <p id="callSupportMessage" class="speech-support-message hidden"></p>
+
+      <div class="voice-call-transcript">
+        <div>
+          <span>Your transcript</span>
+          <p id="callTranscript">Start the call when you are ready.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card conversation-card">
+      <div class="conversation-progress" id="callTurnCount">0 support replies</div>
+      <div class="conversation-thread" id="callThread"></div>
+    </section>
+
+    <section id="callFeedback" class="result hidden">
+      <div id="callFeedbackContent"></div>
+    </section>
+  </main>
+
+  <script type="application/json" id="supportCallData"><%- JSON.stringify(scenario) %></script>
+  <script src="/js/soundManager.js"></script>
+  <script src="/js/feedbackRenderer.js"></script>
+  <script src="/js/voice-call.js"></script>
+</body>
+</html>

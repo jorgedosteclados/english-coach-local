@@ -900,6 +900,109 @@ async function main() {
       await page.close();
     });
 
+    await run(results, "voice call simulates customer reply and feedback", async () => {
+      const page = await newPage(browser);
+
+      await page.route("**/ai/support-call-message", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.equal(body.scenario.includes("cannot save changes"), true);
+        assert.equal(body.messages.some((message) => message.role === "support"), true);
+
+        await route.fulfill({
+          json: {
+            reply: "I am using Chrome, and the message says Save Failed."
+          }
+        });
+      });
+
+      await page.route("**/ai/support-call-feedback", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.equal(body.messages.filter((message) => message.role === "support").length, 1);
+
+        await route.fulfill({
+          json: {
+            result: [
+              "Original:",
+              "Could you please share the exact error message?",
+              "",
+              "Corrected:",
+              "Could you please share the exact error message?",
+              "",
+              "More natural:",
+              "Could you please share the exact error message you see on screen?",
+              "",
+              "Professional version:",
+              "Could you please share the exact error message and the browser you are using so I can investigate further?",
+              "",
+              "Explanation in Portuguese:",
+              "A frase esta clara. Voce pode soar ainda mais profissional explicando por que precisa da informacao.",
+              "",
+              "Useful alternatives:",
+              "- Could you please share a screenshot of the error?",
+              "- When did this issue start?",
+              "- I will check this and keep you updated."
+            ].join("\n")
+          }
+        });
+      });
+
+      await page.addInitScript(() => {
+        window.__audioEvents = [];
+
+        class FakeAudio {
+          constructor(src) {
+            this.src = src;
+            window.__audioEvents.push({ event: "construct", src });
+          }
+
+          play() {
+            window.__audioEvents.push({ event: "play", src: this.src });
+            return Promise.resolve();
+          }
+
+          pause() {}
+          removeAttribute() {}
+          load() {}
+        }
+
+        class FakeSpeechRecognition extends EventTarget {
+          start() {
+            window.__recognition = this;
+          }
+        }
+
+        Object.defineProperty(window, "Audio", { value: FakeAudio, configurable: true });
+        Object.defineProperty(window, "SpeechRecognition", {
+          value: FakeSpeechRecognition,
+          configurable: true
+        });
+      });
+
+      await page.goto(`${baseURL}/voice-call`);
+      await pause();
+      await expectVisibleText(page, "Support Call");
+      await expectVisibleText(page, "Save Error");
+      await page.getByRole("button", { name: "Start call" }).click();
+      await page.getByRole("button", { name: "Speak" }).click();
+      await page.evaluate(() => {
+        const event = new Event("result");
+        event.results = [[{ transcript: "Could you please share the exact error message?" }]];
+        window.__recognition.dispatchEvent(event);
+      });
+
+      await expectVisibleText(page, "I am using Chrome");
+      assert.equal(
+        await page.evaluate(() => window.__audioEvents.some((event) => event.src.includes("en-US-JennyNeural"))),
+        true
+      );
+      await page.getByRole("button", { name: "End call" }).click();
+      await expectVisibleText(page, "Call complete");
+      await expectVisibleText(page, "Professional version");
+      await page.close();
+    });
+
     await run(results, "speaking practice shows recognition flow and saves progress", async () => {
       const page = await newPage(browser);
 

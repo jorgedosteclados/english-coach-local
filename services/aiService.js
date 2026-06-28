@@ -72,7 +72,49 @@ async function callOpenRouter(prompt) {
   return response.data.choices[0].message.content;
 }
 
-async function generateAIResponse(prompt) {
+async function callOllama(prompt) {
+  const ollamaUrl = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
+  const model = process.env.OLLAMA_MODEL || "qwen3:8b";
+
+  const response = await axios.post(
+    `${ollamaUrl.replace(/\/$/, "")}/api/chat`,
+    {
+      model,
+      think: false,
+      stream: false,
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      options: {
+        temperature: 0.45,
+        num_predict: 220
+      }
+    },
+    {
+      timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 45000
+    }
+  );
+
+  return response.data.message.content;
+}
+
+async function generateAIResponse(prompt, options = {}) {
+  if (options.provider === "ollama" || process.env.AI_PROVIDER === "ollama") {
+    try {
+      console.log("Trying Ollama...");
+      return await callOllama(prompt);
+    } catch (ollamaError) {
+      console.error("Ollama failed:", ollamaError.message);
+
+      if (options.localOnly) {
+        throw ollamaError;
+      }
+    }
+  }
+
   try {
     console.log("Trying Gemini...");
     return await callGemini(prompt);
@@ -98,5 +140,6 @@ async function generateAIResponse(prompt) {
 }
 
 module.exports = {
-  generateAIResponse
+  generateAIResponse,
+  callOllama
 };

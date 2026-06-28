@@ -189,10 +189,84 @@ Rules:
 `;
 }
 
+function buildSupportCallMessagePrompt({ scenario, customerProfile, messages }) {
+  return `
+You are roleplaying as a realistic customer in a professional support voice call.
+
+Scenario:
+${scenario || "A customer is calling support about a business application issue."}
+
+Customer profile:
+${customerProfile || "Polite, busy, and wants a clear next step."}
+
+Conversation so far:
+${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}
+
+Reply as the customer only.
+
+Rules:
+- Write only one short spoken English reply.
+- Use natural American business English.
+- Do not correct the support agent yet.
+- Keep it realistic for a support call.
+- Give details, ask a follow-up question, or react naturally.
+- Do not add labels, markdown, stage directions, or explanations.
+`;
+}
+
+function buildSupportCallFeedbackPrompt({ scenario, messages }) {
+  const userReplies = messages
+    .filter((message) => message.role === "support")
+    .map((message) => message.content)
+    .join("\n");
+
+  return `
+You are an English speaking coach helping a Brazilian Portuguese speaker improve professional English for support calls.
+
+Review the support agent's spoken replies.
+
+Scenario:
+${scenario || "A professional support call."}
+
+Conversation:
+${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}
+
+Return exactly in this format:
+
+Original:
+${userReplies}
+
+Corrected:
+[corrected English version of the support agent's replies]
+
+More natural:
+[more natural spoken support version]
+
+Professional version:
+[professional support call version]
+
+Explanation in Portuguese:
+[short explanation in Portuguese about grammar, clarity, tone, and call language]
+
+Useful alternatives:
+- [English call phrase 1]
+- [English call phrase 2]
+- [English call phrase 3]
+
+Rules:
+- Keep corrected replies in English.
+- Use Portuguese only in the explanation.
+- Focus on concise spoken English, empathy, and clear next steps.
+- Keep the feedback concise.
+`;
+}
+
 module.exports = {
   buildCorrectionPrompt,
   buildLessonQuestionPrompt,
   buildConversationMessagePrompt,
   buildConversationFeedbackPrompt,
-  buildSpeakingFeedbackPrompt
+  buildSpeakingFeedbackPrompt,
+  buildSupportCallMessagePrompt,
+  buildSupportCallFeedbackPrompt
 };

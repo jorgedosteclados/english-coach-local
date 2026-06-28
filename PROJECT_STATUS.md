@@ -204,6 +204,8 @@ Mistakes screen loads only questions due now and reschedules them after review.
   The reader should show only learner-approved images by default. Automatic search is
   used only to suggest candidates after an explicit action, because unapproved images
   can teach the wrong association.
+- Voice-call simulations should prefer local Ollama models for customer roleplay and
+  feedback so practice does not consume online AI tokens by default.
 - All relevant behavior changes must include focused test coverage.
 - Keep the curriculum vendor-neutral. Use generic products, systems, integrations,
   and service scenarios instead of centering the course on one company or platform.
@@ -221,6 +223,8 @@ Mistakes screen loads only questions due now and reschedules them after review.
 6. Add a question-bank maintenance flow for importing, disabling, editing, or resetting
    specific questions.
 7. Add a one-command local startup helper for the Node app plus LibreTranslate.
+8. Validate the voice-call flow on a phone through HTTPS, because mobile browsers may
+   block microphone access on plain local network URLs.
 
 ## Verification
 
@@ -272,6 +276,11 @@ speaking, adaptive review, daily review, and history.
 - Expanded E2E coverage for local dictionary lookup, user dictionary lookup, optional
   LibreTranslate lookup, Openverse image lookup, abstract-word image skipping, and
   cache reuse.
+- Added `/voice-call` for simulated professional support calls with browser speech
+  recognition, local Ollama customer replies, Edge TTS customer audio, scenario
+  selection, and end-of-call feedback.
+- Added Ollama configuration to `.env.example` and README. The recommended local model
+  for a 16 GB MacBook Air M3 is `qwen3:8b`.
 
 ### 2026-06-19
 

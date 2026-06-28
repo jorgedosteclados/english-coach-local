@@ -12,6 +12,7 @@ const { lessonCategories } = require("./data/lessonCategories");
 const speakingPrompts = require("./data/speakingPrompts");
 const visualReviewCards = require("./data/visualReviewCards");
 const { learningPathUnits } = require("./data/learningPath");
+const { getSupportCallScenario, supportCallScenarios } = require("./data/supportCallScenarios");
 const {
   getWritingMission,
   getConversationContent,
@@ -508,6 +509,11 @@ app.get("/writing", (req, res) => {
 app.get("/conversation", (req, res) => {
   const content = getConversationContent(getRequestedUnitId(req, 4));
   res.render("conversation", { content });
+});
+
+app.get("/voice-call", (req, res) => {
+  const scenario = getSupportCallScenario(req.query.scenario);
+  res.render("voice-call", { scenario, scenarios: supportCallScenarios });
 });
 
 app.get("/speaking", (req, res) => {
