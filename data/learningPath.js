@@ -34,7 +34,7 @@ const learningPathSections = [
       unit(11, "Systems and Integrations", "Practice technical phrases for connected systems and data flows.", "lesson", "/lesson?unit=11&category=systems"),
       unit(12, "Explain the Impact", "Describe business impact clearly and objectively.", "lesson", "/lesson?unit=12&category=impact"),
       unit(13, "Clarify the Scope", "Separate product issues from configuration questions.", "lesson", "/lesson?unit=13&category=scope"),
-      unit(14, "Technical Correction", "Improve the accuracy of a technical explanation.", "correction", "/correct?unit=14"),
+      unit(14, "Technical Call Correction", "Turn real technical call phrases into natural spoken English.", "correction", "/correct?unit=14&mode=call"),
       unit(15, "Integration Conversation", "Guide a customer through a system integration case.", "conversation", "/conversation?unit=15"),
       checkpoint(23, 3, "Problem Solving Checkpoint", ["systems", "scope", "routing"])
     ]
@@ -70,7 +70,7 @@ function checkpoint(id, phase, title, categories) {
   return {
     id,
     title,
-    description: "Demonstrate at least 80% mastery to complete this phase.",
+    description: "Get at least one answer correct to complete this phase.",
     activityType: "checkpoint",
     href: `/lesson?unit=${id}&checkpoint=${phase}&categories=${categories.join(",")}`,
     isLockedDefault: 0,

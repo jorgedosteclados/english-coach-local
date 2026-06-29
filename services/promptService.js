@@ -38,6 +38,55 @@ Useful alternatives:
 `;
 }
 
+function buildCallPhraseFeedbackPrompt(text) {
+  return `
+You are an English speaking coach helping a Brazilian Portuguese speaker improve real-time professional English for technical support calls.
+
+The learner's main problem is not basic English. The core issue is turning a correct technical idea into a natural, structured, professional English sentence while speaking live.
+
+Analyze the user's real call phrase or phrases.
+
+User call phrase(s):
+${text}
+
+Return exactly in this format. If the user provides multiple phrases, repeat this block for the most important 1 to 5 phrases:
+
+Original:
+[one original phrase from the user]
+
+Error type:
+[one concise label such as question structure, indirect question word order, verb form, preposition, missing object, word choice, long sentence, weak closing, hesitation, or mental translation]
+
+Explanation in Portuguese:
+[simple explanation in Portuguese. Do not call the learner a beginner. Explain the structure problem and why it happens in live calls.]
+
+Corrected:
+[grammatically corrected English version]
+
+More natural:
+[natural spoken English version for a professional technical call]
+
+Professional version:
+[polished version that sounds confident in a customer/support call]
+
+Reusable pattern:
+[a reusable English pattern the learner can memorize]
+
+Useful alternatives:
+- [English call phrase 1]
+- [English call phrase 2]
+- [English call phrase 3]
+
+Rules:
+- Keep all corrected phrases in English.
+- Use Portuguese only in explanations.
+- Focus on real-time call performance: short structure, clear questions, precise technical wording, prepositions, missing objects, and confident closing.
+- Prefer short spoken sentences over long written-style rewrites.
+- If the original contains hesitation or repeated fillers, show a cleaner professional version.
+- Do not add markdown.
+`;
+}
+
 function buildLessonQuestionPrompt(category) {
   const lessonFocus = category && category.id !== "all" ? category.label : "customer support, service operations, or professional work";
 
@@ -223,7 +272,9 @@ function buildSupportCallFeedbackPrompt({ scenario, messages }) {
   return `
 You are an English speaking coach helping a Brazilian Portuguese speaker improve professional English for support calls.
 
-Review the support agent's spoken replies.
+The learner's main challenge is real-time call performance: turning technical ideas into short, natural, structured spoken English under pressure.
+
+Review the support agent's spoken replies and identify the most important 1 to 5 phrase-level improvements.
 
 Scenario:
 ${scenario || "A professional support call."}
@@ -231,22 +282,31 @@ ${scenario || "A professional support call."}
 Conversation:
 ${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}
 
-Return exactly in this format:
-
-Original:
+Support agent replies:
 ${userReplies}
 
+Return exactly in this format. Repeat the block for each important support phrase:
+
+Original:
+[one original support phrase]
+
+Error type:
+[one concise label such as question structure, indirect question word order, verb form, preposition, missing object, word choice, long sentence, weak closing, hesitation, or mental translation]
+
+Explanation in Portuguese:
+[simple explanation in Portuguese about why this phrase loses clarity or confidence in a live call]
+
 Corrected:
-[corrected English version of the support agent's replies]
+[grammatically corrected English version]
 
 More natural:
 [more natural spoken support version]
 
 Professional version:
-[professional support call version]
+[polished version for a professional technical support call]
 
-Explanation in Portuguese:
-[short explanation in Portuguese about grammar, clarity, tone, and call language]
+Reusable pattern:
+[a reusable English pattern the learner can memorize]
 
 Useful alternatives:
 - [English call phrase 1]
@@ -256,17 +316,102 @@ Useful alternatives:
 Rules:
 - Keep corrected replies in English.
 - Use Portuguese only in the explanation.
-- Focus on concise spoken English, empathy, and clear next steps.
+- Focus on concise spoken English, technical clarity, question structure, prepositions, missing objects, confidence, and clear next steps.
 - Keep the feedback concise.
 `;
 }
 
+function buildLocalChatPrompt(messages) {
+  const recentMessages = Array.isArray(messages) ? messages.slice(-12) : [];
+  const conversation = recentMessages
+    .map((message) => {
+      const role = message.role === "assistant" ? "Local AI" : "User";
+      return `${role}: ${String(message.content || "").trim()}`;
+    })
+    .join("\n");
+
+  return `
+You are the user's local AI assistant running through Ollama inside English Coach Local.
+
+The user is a Brazilian Portuguese speaker learning professional English for technical support calls. Help with English, technical support phrases, call practice, grammar, pronunciation explanations, and general questions.
+
+Style:
+- Be practical, concise, and friendly.
+- If the user writes in Portuguese, answer in Portuguese unless they ask for English.
+- When correcting English, show a natural professional version.
+- Keep examples useful for technical support and customer calls when relevant.
+- Do not claim to access external systems or the internet.
+
+Conversation:
+${conversation}
+
+Reply as the local AI assistant only.
+`;
+}
+
+function buildContextualReadingTranslationPrompt({ text, title, chapterTitle }) {
+  return `
+You are helping a Brazilian Portuguese speaker read an English book.
+
+Translate the selected English text into natural Brazilian Portuguese, using context from the book/chapter when available.
+
+Book/title:
+${title || "Unknown reading"}
+
+Chapter/context:
+${chapterTitle || "Current passage"}
+
+Selected text:
+${text}
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "translation": "natural Brazilian Portuguese translation",
+  "explanation": "short explanation in Portuguese of the meaning or nuance",
+  "expressions": [
+    {
+      "english": "important English expression",
+      "portuguese": "natural Portuguese meaning"
+    }
+  ]
+}
+
+Rules:
+- Do not correct or rewrite the English.
+- Do not translate word by word if that sounds unnatural.
+- Keep the translation faithful to the selected text.
+- Keep the explanation short and useful for reading comprehension.
+- Include 0 to 4 important expressions only.
+- Do not add markdown.
+`;
+}
+
+function buildFastContextualReadingTranslationPrompt({ text }) {
+  return `
+Translate this English passage into natural Brazilian Portuguese.
+
+Rules:
+- Return only the Portuguese translation.
+- Preserve names and quoted speech naturally.
+- Do not explain.
+- Do not add markdown.
+
+Text:
+${text}
+`;
+}
+
 module.exports = {
+  buildCallPhraseFeedbackPrompt,
+  buildContextualReadingTranslationPrompt,
+  buildFastContextualReadingTranslationPrompt,
   buildCorrectionPrompt,
   buildLessonQuestionPrompt,
   buildConversationMessagePrompt,
   buildConversationFeedbackPrompt,
   buildSpeakingFeedbackPrompt,
+  buildLocalChatPrompt,
   buildSupportCallMessagePrompt,
   buildSupportCallFeedbackPrompt
 };

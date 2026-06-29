@@ -18,9 +18,12 @@ db.run(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     original_text TEXT NOT NULL,
     ai_feedback TEXT NOT NULL,
+    mode TEXT DEFAULT 'general',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+db.run("ALTER TABLE corrections ADD COLUMN mode TEXT DEFAULT 'general'", () => {});
 
 db.run(`
   CREATE TABLE IF NOT EXISTS user_progress (
@@ -126,6 +129,24 @@ db.run(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(word, source_language, target_language)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS reading_context_translation_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    chapter_index INTEGER DEFAULT 0,
+    original_text TEXT NOT NULL,
+    target_language TEXT DEFAULT 'pt-BR',
+    translation TEXT NOT NULL,
+    explanation TEXT,
+    expressions_json TEXT DEFAULT '[]',
+    provider TEXT DEFAULT 'ollama',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(source_type, source_id, chapter_index, original_text, target_language)
   )
 `);
 

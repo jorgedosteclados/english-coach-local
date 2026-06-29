@@ -10,6 +10,7 @@
   const resetSpeechButton = document.getElementById("resetSpeech");
   const speechStatus = document.getElementById("speechStatus");
   const immersiveToggle = document.getElementById("immersiveToggle");
+  const readingThemeToggle = document.getElementById("readingThemeToggle");
   const sheet = document.getElementById("wordSheet");
   const closeSheetButton = document.getElementById("closeWordSheet");
   const wordLabel = document.getElementById("selectedWordLabel");
@@ -28,6 +29,14 @@
   const saveWordButton = document.getElementById("saveWord");
   const completeReadingButton = document.getElementById("completeReading");
   const completionEl = document.getElementById("readingCompletion");
+  const contextTranslateButton = document.getElementById("contextTranslate");
+  const contextSheet = document.getElementById("contextSheet");
+  const closeContextSheetButton = document.getElementById("closeContextSheet");
+  const contextTranslationSource = document.getElementById("contextTranslationSource");
+  const contextOriginalText = document.getElementById("contextOriginalText");
+  const contextTranslatedText = document.getElementById("contextTranslatedText");
+  const contextExplanation = document.getElementById("contextExplanation");
+  const contextExpressions = document.getElementById("contextExpressions");
 
   let currentSentenceIndex =
     payload.sourceType === "trail"
@@ -51,6 +60,15 @@
       immersiveToggle.textContent = enabled ? "Classic" : "Immersive";
     }
     localStorage.setItem("englishCoach.reading.immersive", enabled ? "1" : "0");
+  }
+
+  function setDarkReadingMode(enabled) {
+    document.body.classList.toggle("reading-dark", enabled);
+    if (readingThemeToggle) {
+      readingThemeToggle.setAttribute("aria-pressed", enabled ? "true" : "false");
+      readingThemeToggle.textContent = enabled ? "Light" : "Dark";
+    }
+    localStorage.setItem("englishCoach.reading.darkMode", enabled ? "1" : "0");
   }
 
   function render() {
@@ -265,6 +283,103 @@
 
   function escapeAttribute(value) {
     return escapeHtml(value);
+  }
+
+  function getSelectedReadingText() {
+    const selection = window.getSelection?.();
+    const selectedText = selection?.toString().replace(/\s+/g, " ").trim();
+
+    if (selectedText && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const container =
+        range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+          ? range.commonAncestorContainer.parentElement
+          : range.commonAncestorContainer;
+
+      if (container && textEl.contains(container)) {
+        return selectedText;
+      }
+    }
+
+    return payload.sentences[currentSentenceIndex]?.text || "";
+  }
+
+  async function translateContext() {
+    const selectedText = getSelectedReadingText();
+    if (!selectedText.trim()) {
+      return;
+    }
+
+    sheet.hidden = true;
+    contextSheet.hidden = false;
+    contextTranslationSource.textContent = "Local AI translation";
+    contextOriginalText.textContent = selectedText;
+    contextTranslatedText.textContent = "Translating with your local AI...";
+    contextExplanation.textContent = "";
+    contextExplanation.closest(".context-result").hidden = true;
+    contextExpressions.innerHTML = "";
+    contextTranslateButton.disabled = true;
+    contextTranslateButton.textContent = "Translating...";
+
+    try {
+      const response = await fetch("/reading/context-translation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceType: payload.sourceType,
+          sourceId: payload.sourceType === "book" ? payload.bookId : payload.unitId,
+          chapterIndex: payload.chapterIndex || 0,
+          title: payload.title,
+          chapterTitle: payload.chapterTitle || payload.summary,
+          text: selectedText
+        })
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to translate this passage.");
+      }
+
+      contextTranslationSource.textContent =
+        result.source === "cache" ? "Saved local AI translation" : "Local AI translation";
+      contextTranslatedText.textContent = result.translation || "No translation returned.";
+      contextExplanation.textContent = result.explanation || "";
+      contextExplanation.closest(".context-result").hidden = !result.explanation;
+      renderContextExpressions(result.expressions || []);
+      window.getSelection?.().removeAllRanges();
+    } catch (error) {
+      contextTranslatedText.textContent = error.message || "Local AI is unavailable. Make sure Ollama is running.";
+      contextExplanation.textContent = "";
+      contextExplanation.closest(".context-result").hidden = true;
+      contextExpressions.innerHTML = "";
+    } finally {
+      contextTranslateButton.disabled = false;
+      contextTranslateButton.textContent = "AI translate";
+    }
+  }
+
+  function renderContextExpressions(expressions) {
+    contextExpressions.innerHTML = "";
+
+    if (!expressions.length) {
+      return;
+    }
+
+    const title = document.createElement("span");
+    title.textContent = "Useful expressions";
+    contextExpressions.appendChild(title);
+
+    expressions.forEach((expression) => {
+      const item = document.createElement("p");
+      const english = document.createElement("strong");
+      const portuguese = document.createElement("small");
+
+      english.textContent = expression.english || "Expression";
+      portuguese.textContent = expression.portuguese || "";
+      item.appendChild(english);
+      item.appendChild(portuguese);
+      contextExpressions.appendChild(item);
+    });
   }
 
   function speak(text, options = {}) {
@@ -642,8 +757,13 @@
   previousButton.addEventListener("click", () => goToSentence(currentSentenceIndex - 1, false));
   nextButton.addEventListener("click", () => goToSentence(currentSentenceIndex + 1, false));
   resetSpeechButton?.addEventListener("click", resetSpeech);
+  contextTranslateButton?.addEventListener("click", translateContext);
   immersiveToggle?.addEventListener("click", () => {
     setImmersiveMode(!document.body.classList.contains("immersive-reading"));
+  });
+
+  readingThemeToggle?.addEventListener("click", () => {
+    setDarkReadingMode(!document.body.classList.contains("reading-dark"));
   });
   providerSelect?.addEventListener("change", async () => {
     localStorage.setItem("englishCoach.reading.ttsProvider", getSelectedProvider());
@@ -669,6 +789,9 @@
   });
   closeSheetButton.addEventListener("click", () => {
     sheet.hidden = true;
+  });
+  closeContextSheetButton?.addEventListener("click", () => {
+    contextSheet.hidden = true;
   });
   speakWordButton.addEventListener("click", () => {
     if (selectedWord) {
@@ -802,5 +925,6 @@
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }
   setImmersiveMode(localStorage.getItem("englishCoach.reading.immersive") === "1");
+  setDarkReadingMode(localStorage.getItem("englishCoach.reading.darkMode") === "1");
   render();
 })();

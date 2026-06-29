@@ -12,9 +12,9 @@
 
     <section class="hero hero-with-mascot compact-mascot">
       <div>
-        <p class="mascot-kicker">Mini Beagle Coach</p>
-        <h1>Correct My English</h1>
-        <p>Write a sentence in English and get feedback.</p>
+        <p class="mascot-kicker" id="correctionKicker">Mini Beagle Coach</p>
+        <h1 id="correctionTitle">Correct My English</h1>
+        <p id="correctionIntro">Write a sentence in English and get feedback.</p>
       </div>
       <img
         src="/images/mini-beagle-mascot.png"
@@ -24,7 +24,12 @@
     </section>
 
     <section id="correctForm" class="card">
-      <label for="text">Your sentence</label>
+      <div class="correction-mode-tabs" aria-label="Correction mode">
+        <button type="button" class="correction-mode-tab active" data-mode="general">General</button>
+        <button type="button" class="correction-mode-tab" data-mode="call">Technical call</button>
+      </div>
+
+      <label for="text" id="correctionTextLabel">Your sentence</label>
       <textarea id="text" placeholder="Example: I have doubt about this case."></textarea>
 
       <button id="correctBtn">Correct</button>

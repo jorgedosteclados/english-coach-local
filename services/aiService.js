@@ -72,40 +72,151 @@ async function callOpenRouter(prompt) {
   return response.data.choices[0].message.content;
 }
 
-async function callOllama(prompt) {
+function getOllamaConfig() {
   const ollamaUrl = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
   const model = process.env.OLLAMA_MODEL || "qwen3:8b";
 
-  const response = await axios.post(
-    `${ollamaUrl.replace(/\/$/, "")}/api/chat`,
-    {
-      model,
-      think: false,
-      stream: false,
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      options: {
-        temperature: 0.45,
-        num_predict: 220
+  return {
+    endpoint: `${ollamaUrl.replace(/\/$/, "")}/api/chat`,
+    model,
+    timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 45000
+  };
+}
+
+function buildOllamaPayload(prompt, options = {}) {
+  return {
+    model: getOllamaConfig().model,
+    think: Boolean(options.think),
+    stream: Boolean(options.stream),
+    messages: [
+      {
+        role: "user",
+        content: prompt
       }
-    },
+    ],
+    options: {
+      temperature: 0.45,
+      num_predict: options.numPredict || 220
+    }
+  };
+}
+
+function createThinkingFilter() {
+  let insideThinkBlock = false;
+
+  return (chunk) => {
+    let remaining = String(chunk || "");
+    let visible = "";
+
+    while (remaining) {
+      const lower = remaining.toLowerCase();
+
+      if (insideThinkBlock) {
+        const endIndex = lower.indexOf("</think>");
+        if (endIndex === -1) {
+          return visible;
+        }
+
+        remaining = remaining.slice(endIndex + "</think>".length);
+        insideThinkBlock = false;
+        continue;
+      }
+
+      const startIndex = lower.indexOf("<think>");
+      if (startIndex === -1) {
+        visible += remaining;
+        break;
+      }
+
+      visible += remaining.slice(0, startIndex);
+      remaining = remaining.slice(startIndex + "<think>".length);
+      insideThinkBlock = true;
+    }
+
+    return visible;
+  };
+}
+
+async function callOllama(prompt, options = {}) {
+  const config = getOllamaConfig();
+
+  const response = await axios.post(
+    config.endpoint,
+    buildOllamaPayload(prompt, {
+      think: options.think,
+      stream: false,
+      numPredict: options.numPredict
+    }),
     {
-      timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 45000
+      timeout: config.timeout
     }
   );
 
-  return response.data.message.content;
+  const filterThinking = createThinkingFilter();
+  return filterThinking(response.data.message.content);
+}
+
+async function callOllamaStream(prompt, options = {}) {
+  const config = getOllamaConfig();
+  const filterThinking = createThinkingFilter();
+
+  const response = await axios.post(
+    config.endpoint,
+    buildOllamaPayload(prompt, {
+      think: options.think,
+      stream: true,
+      numPredict: options.numPredict
+    }),
+    {
+      responseType: "stream",
+      timeout: config.timeout
+    }
+  );
+
+  return new Promise((resolve, reject) => {
+    let buffer = "";
+    let fullResponse = "";
+
+    response.data.on("data", (chunk) => {
+      buffer += chunk.toString("utf8");
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      lines.forEach((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return;
+        }
+
+        try {
+          const data = JSON.parse(trimmed);
+          const content = data.message?.content || data.response || "";
+          const visibleContent = filterThinking(content);
+
+          if (visibleContent) {
+            fullResponse += visibleContent;
+            options.onToken?.(visibleContent);
+          }
+
+          if (data.done) {
+            resolve(fullResponse);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    response.data.on("end", () => resolve(fullResponse));
+    response.data.on("error", reject);
+  });
 }
 
 async function generateAIResponse(prompt, options = {}) {
   if (options.provider === "ollama" || process.env.AI_PROVIDER === "ollama") {
     try {
       console.log("Trying Ollama...");
-      return await callOllama(prompt);
+      return await callOllama(prompt, options);
     } catch (ollamaError) {
       console.error("Ollama failed:", ollamaError.message);
 
@@ -141,5 +252,6 @@ async function generateAIResponse(prompt, options = {}) {
 
 module.exports = {
   generateAIResponse,
-  callOllama
+  callOllama,
+  callOllamaStream
 };

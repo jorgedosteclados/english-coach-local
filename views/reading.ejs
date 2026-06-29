@@ -16,6 +16,7 @@
       </div>
       <div class="reading-topbar-actions">
         <button type="button" id="immersiveToggle" class="reading-mode-toggle" aria-pressed="false">Immersive</button>
+        <button type="button" id="readingThemeToggle" class="reading-mode-toggle" aria-pressed="false">Dark</button>
         <a href="/library" aria-label="Library">B</a>
       </div>
     </header>
@@ -68,6 +69,7 @@
         <option value="">Best available voice</option>
       </select>
       <button type="button" id="resetSpeech" aria-label="Reset audio">Reset</button>
+      <button type="button" id="contextTranslate">AI translate</button>
       <span id="speechStatus" class="speech-status" aria-live="polite"></span>
     </section>
   </main>
@@ -100,6 +102,22 @@
       <button type="button" id="speakWord">Listen</button>
       <button type="button" id="saveWord">Save word</button>
     </div>
+  </aside>
+
+  <aside id="contextSheet" class="context-sheet" aria-live="polite" hidden>
+    <button type="button" id="closeContextSheet" aria-label="Close contextual translation">×</button>
+    <span id="contextTranslationSource">Local AI translation</span>
+    <strong>Context translation</strong>
+    <p id="contextOriginalText" class="context-original"></p>
+    <div class="context-result">
+      <span>Portuguese</span>
+      <p id="contextTranslatedText"></p>
+    </div>
+    <div class="context-result">
+      <span>Meaning</span>
+      <p id="contextExplanation"></p>
+    </div>
+    <div id="contextExpressions" class="context-expressions"></div>
   </aside>
 
   <script>

@@ -32,6 +32,7 @@ const {
   deleteBook,
   extractUploadText,
   getBookReader,
+  getContextualReadingTranslation,
   getReadingTranslation,
   getTrailReader,
   listBooks,
@@ -279,6 +280,17 @@ app.post("/reading/translation", async (req, res) => {
   }
 });
 
+app.post("/reading/context-translation", async (req, res) => {
+  try {
+    res.json(await getContextualReadingTranslation(req.body || {}));
+  } catch (error) {
+    console.error("Error reading contextual translation:", error.message);
+    res
+      .status(error.statusCode || 500)
+      .json({ error: error.statusCode ? error.message : "Local AI is unavailable. Make sure Ollama is running." });
+  }
+});
+
 app.get("/reading/image", async (req, res) => {
   try {
     res.json(await getReadingWordImage(req.query.word));
@@ -307,6 +319,14 @@ app.post("/reading/image/approve", async (req, res) => {
 });
 
 app.get("/reading/tts", async (req, res) => {
+  await sendGeneratedSpeech(req, res);
+});
+
+app.get("/tts", async (req, res) => {
+  await sendGeneratedSpeech(req, res);
+});
+
+async function sendGeneratedSpeech(req, res) {
   try {
     const audioFile = await generateSpeechFile({
       text: req.query.text,
@@ -321,16 +341,24 @@ app.get("/reading/tts", async (req, res) => {
     console.error("Error generating reading audio:", error.message);
     res.status(error.statusCode || 500).json({ error: "Unable to generate audio." });
   }
-});
+}
 
 app.get("/reading/tts/voices", async (req, res) => {
+  await sendAvailableTtsVoices(req, res);
+});
+
+app.get("/tts/voices", async (req, res) => {
+  await sendAvailableTtsVoices(req, res);
+});
+
+async function sendAvailableTtsVoices(req, res) {
   try {
     res.json({ voices: await getAvailableVoices(req.query.provider) });
   } catch (error) {
     console.error("Error listing reading voices:", error.message);
     res.status(500).json({ error: "Unable to list voices." });
   }
-});
+}
 
 app.get("/library", async (req, res) => {
   try {
@@ -514,6 +542,10 @@ app.get("/conversation", (req, res) => {
 app.get("/voice-call", (req, res) => {
   const scenario = getSupportCallScenario(req.query.scenario);
   res.render("voice-call", { scenario, scenarios: supportCallScenarios });
+});
+
+app.get("/local-ai", (req, res) => {
+  res.render("local-ai");
 });
 
 app.get("/speaking", (req, res) => {

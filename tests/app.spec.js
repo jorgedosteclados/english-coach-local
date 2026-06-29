@@ -84,6 +84,44 @@ test("home and learning path render the main navigation", async ({ page }) => {
   await expect(page.getByText(/Phase \d of 4/)).toBeVisible();
 });
 
+test("reading page saves dark Kindle-style mode", async ({ page }) => {
+  await page.route("**/reading/context-translation", async (route) => {
+    const body = route.request().postDataJSON();
+    expect(body.sourceType).toBe("trail");
+    expect(body.text.length).toBeGreaterThan(10);
+
+    await route.fulfill({
+      json: {
+        text: body.text,
+        translation: "O cliente relata um problema que precisa de mais detalhes.",
+        explanation: "A frase descreve o contexto inicial de um atendimento.",
+        expressions: [
+          {
+            english: "more details",
+            portuguese: "mais detalhes"
+          }
+        ],
+        source: "ollama"
+      }
+    });
+  });
+
+  await page.goto("/reading?unit=25");
+  await expect(page.getByRole("heading", { name: "A Clear First Reply" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Dark" })).toHaveAttribute("aria-pressed", "false");
+
+  await page.getByRole("button", { name: "Dark" }).click();
+
+  await expect(page.getByRole("button", { name: "Light" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("body")).toHaveClass(/reading-dark/);
+  expect(await page.evaluate(() => localStorage.getItem("englishCoach.reading.darkMode"))).toBe("1");
+
+  await page.getByRole("button", { name: "AI translate" }).click();
+  await expect(page.getByText("Context translation")).toBeVisible();
+  await expect(page.getByText("O cliente relata um problema")).toBeVisible();
+  await expect(page.locator("#contextExpressions").getByText("more details", { exact: true })).toBeVisible();
+});
+
 test("placement diagnostic completes and returns an estimated level", async ({ page }) => {
   await page.route("**/placement/submit", async (route) => {
     const body = route.request().postDataJSON();
@@ -137,6 +175,41 @@ test("lesson can be completed from question to saved progress", async ({ page })
   let questionIndex = 0;
   const correctOptionPositions = [];
 
+  await page.addInitScript(() => {
+    window.__lessonAudioEvents = [];
+
+    class FakeAudio {
+      constructor(src) {
+        this.src = src;
+        window.__lessonAudioEvents.push({ event: "construct", src });
+        this.onplaying = null;
+        this.onerror = null;
+      }
+
+      play() {
+        window.__lessonAudioEvents.push({ event: "play", src: this.src });
+        if (this.onplaying) {
+          this.onplaying();
+        }
+        return Promise.resolve();
+      }
+
+      pause() {}
+      removeAttribute() {}
+      load() {}
+    }
+
+    Object.defineProperty(window, "Audio", { value: FakeAudio, configurable: true });
+  });
+
+  await page.route("**/tts/voices?**", async (route) => {
+    await route.fulfill({
+      json: {
+        voices: [{ name: "en-US-JennyNeural", lang: "en-US", recommended: true }]
+      }
+    });
+  });
+
   await page.route("**/ai/generate-lesson-question", async (route) => {
     const question = mockQuestions[questionIndex] || mockQuestions[mockQuestions.length - 1];
     questionIndex += 1;
@@ -180,6 +253,7 @@ test("lesson can be completed from question to saved progress", async ({ page })
       await page.getByRole("button", { name: question.correctAnswer }).click();
     } else if (questionIndex === 1) {
       await expect(page.getByText("Listen and build the phrase")).toBeVisible();
+      await page.getByRole("button", { name: "Play phrase", exact: true }).click();
       await page.evaluate((answer) => {
         answer.split(/\s+/).forEach((word) => {
           const token = [...document.querySelectorAll("#wordBank .word-token")].find(
@@ -211,6 +285,13 @@ test("lesson can be completed from question to saved progress", async ({ page })
   expect(new Set(correctOptionPositions).size).toBe(2);
   await expect.poll(() => page.evaluate(() => window.testSoundEvents)).toContain("complete");
   expect((await page.evaluate(() => window.testSoundEvents)).filter((event) => event === "correct")).toHaveLength(5);
+  expect(
+    await page.evaluate(() =>
+      window.__lessonAudioEvents.some(
+        (event) => event.event === "play" && event.src.includes("/tts?") && event.src.includes("provider=edge")
+      )
+    )
+  ).toBe(true);
 });
 
 test("writing mission submits text and shows feedback completion", async ({ page }) => {
@@ -290,4 +371,82 @@ test("correction page validates empty input and shows AI feedback", async ({ pag
     "/conversation?unit=4"
   );
   await expect(page.getByRole("button", { name: "Start Again" })).toBeVisible();
+});
+
+test("technical call correction sends call mode and renders phrase feedback", async ({ page }) => {
+  await page.route("**/ai/correct", async (route) => {
+    const body = route.request().postDataJSON();
+
+    expect(body.mode).toBe("call");
+    expect(body.text).toContain("do expecting");
+
+    await route.fulfill({
+      json: {
+        mode: "call",
+        result:
+          "Original:\nAnd how much you do expecting to be calculated for the first day?\n\nError type:\nQuestion structure\n\nExplanation in Portuguese:\nUse 'were you expecting' para essa pergunta.\n\nCorrected:\nHow much were you expecting to be calculated for the first day?\n\nMore natural:\nWhat amount were you expecting for the first day?\n\nProfessional version:\nCould you confirm the amount you expected for the first day?\n\nReusable pattern:\nWhat were you expecting for...?\n\nUseful alternatives:\n- What should the system calculate?\n- Could you confirm the expected amount?\n- What result were you expecting?"
+      }
+    });
+  });
+
+  await page.route("**/ai/save-lesson-progress", async (route) => {
+    const body = route.request().postDataJSON();
+
+    expect(body.unitId).toBe(14);
+    expect(body.correctAnswers).toBe(1);
+
+    await route.fulfill({
+      json: {
+        success: true,
+        streakDays: 6,
+        unitProgress: { unitId: 14, status: "completed" },
+        nextUnit: { id: 15, title: "Integration Conversation", href: "/conversation?unit=15" }
+      }
+    });
+  });
+
+  await page.goto("/correct?unit=14&mode=call");
+  await expect(page.getByRole("heading", { name: "Real Call Phrases" })).toBeVisible();
+  await page
+    .getByLabel("Call phrase or transcript lines")
+    .fill("And how much you do expecting to be calculated for the first day?");
+  await page.getByRole("button", { name: "Analyze Call Phrase" }).click();
+
+  await expect(page.getByRole("heading", { name: "Call feedback complete!" })).toBeVisible();
+  await expect(page.getByText("Question structure")).toBeVisible();
+  await expect(page.getByText("What were you expecting for...?")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continue to next lesson" })).toHaveAttribute(
+    "href",
+    "/conversation?unit=15"
+  );
+});
+
+test("local AI chat streams messages to Ollama route", async ({ page }) => {
+  await page.route("**/ai/local-chat-stream", async (route) => {
+    const body = route.request().postDataJSON();
+
+    expect(body.think).toBe(true);
+    expect(body.messages.at(-1)).toEqual({
+      role: "user",
+      content: "Help me practice a support call."
+    });
+
+    await route.fulfill({
+      contentType: "text/event-stream",
+      body:
+        'event: token\ndata: {"token":"Sure. I will be the customer. "}\n\n' +
+        'event: token\ndata: {"token":"What is your first question?"}\n\n' +
+        "event: done\ndata: {}\n\n"
+    });
+  });
+
+  await page.goto("/local-ai");
+  await expect(page.getByRole("heading", { name: "Local AI Chat" })).toBeVisible();
+  await expect(page.getByLabel("Deep thinking")).not.toBeChecked();
+  await page.getByLabel("Deep thinking").check();
+  await page.getByLabel("Message").fill("Help me practice a support call.");
+  await page.getByRole("button", { name: "Send" }).click();
+
+  await expect(page.getByText("Help me practice a support call.")).toBeVisible();
+  await expect(page.getByText("What is your first question?")).toBeVisible();
 });

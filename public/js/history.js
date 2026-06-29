@@ -2,7 +2,6 @@ const historyList = document.getElementById("historyList");
 const historyEmpty = document.getElementById("historyEmpty");
 const historySearch = document.getElementById("historySearch");
 const historyFilters = document.querySelectorAll(".history-filter");
-const correctionDraftKey = "englishCoach.correction.draft";
 
 let activeFilter = "all";
 let corrections = [];
@@ -48,8 +47,9 @@ function renderHistory() {
 
   document.querySelectorAll(".practice-again-btn").forEach((button) => {
     button.addEventListener("click", () => {
-      localStorage.setItem(correctionDraftKey, button.dataset.original);
-      window.location.href = "/correct";
+      const mode = button.dataset.mode === "call" ? "call" : "general";
+      localStorage.setItem(getCorrectionDraftKey(mode), button.dataset.original);
+      window.location.href = mode === "call" ? "/correct?mode=call" : "/correct";
     });
   });
 }
@@ -58,7 +58,7 @@ function getFilteredCorrections() {
   const query = historySearch.value.trim().toLowerCase();
 
   return corrections.filter((correction) => {
-    const searchableText = `${correction.original_text} ${correction.ai_feedback}`.toLowerCase();
+    const searchableText = `${correction.original_text} ${correction.ai_feedback} ${correction.mode || ""}`.toLowerCase();
 
     if (query && !searchableText.includes(query)) {
       return false;
@@ -93,15 +93,28 @@ function matchesDateFilter(createdAt) {
 }
 
 function renderHistoryCard(correction) {
+  const isCallFeedback = correction.mode === "call";
+  const callFeedback = isCallFeedback && typeof parseCallFeedback === "function"
+    ? parseCallFeedback(correction.ai_feedback)
+    : [];
+  const firstCallFeedback = callFeedback[0] || null;
   const feedback = parseAIFeedback(correction.ai_feedback);
-  const correctedPreview = feedback.corrected || feedback.moreNatural || "Open details to review the feedback.";
-  const professionalPreview = feedback.professional || "";
+  const correctedPreview =
+    firstCallFeedback?.corrected ||
+    feedback.corrected ||
+    feedback.moreNatural ||
+    "Open details to review the feedback.";
+  const professionalPreview = firstCallFeedback?.professional || feedback.professional || "";
+  const detailsHtml =
+    isCallFeedback && typeof renderCallFeedback === "function"
+      ? renderCallFeedback(correction.ai_feedback)
+      : renderStructuredFeedback(correction.ai_feedback);
 
   return `
     <article class="history-card" data-id="${correction.id}">
       <div class="history-card-header">
         <div>
-          <p class="unit-label">Saved correction</p>
+          <p class="unit-label">${isCallFeedback ? "Call phrase correction" : "Saved correction"}</p>
           <h2>${escapeHtml(correction.original_text)}</h2>
         </div>
         <time>${formatHistoryDate(correction.created_at)}</time>
@@ -129,6 +142,7 @@ function renderHistoryCard(correction) {
         <button
           type="button"
           class="practice-again-btn"
+          data-mode="${isCallFeedback ? "call" : "general"}"
           data-original="${escapeHtml(correction.original_text)}"
         >
           Practice again
@@ -136,10 +150,14 @@ function renderHistoryCard(correction) {
       </div>
 
       <div class="history-details hidden">
-        ${renderStructuredFeedback(correction.ai_feedback)}
+        ${detailsHtml}
       </div>
     </article>
   `;
+}
+
+function getCorrectionDraftKey(mode) {
+  return `englishCoach.correction.${mode}.unit3.draft`;
 }
 
 function formatHistoryDate(value) {

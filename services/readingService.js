@@ -1,6 +1,11 @@
 const db = require("../database");
 const { getTrailReading } = require("../data/trailReadings");
 const { PDFParse } = require("pdf-parse");
+const { generateAIResponse } = require("./aiService");
+const {
+  buildContextualReadingTranslationPrompt,
+  buildFastContextualReadingTranslationPrompt
+} = require("./promptService");
 const { translateWithLibreTranslate } = require("./libreTranslateService");
 
 const translations = {
@@ -703,6 +708,202 @@ async function saveVocabulary({ sourceType, sourceId, word, sentence, translatio
   return { success: true, word: normalizedWord };
 }
 
+async function getContextualReadingTranslation({
+  sourceType,
+  sourceId,
+  chapterIndex = 0,
+  text,
+  title,
+  chapterTitle,
+  detailed = false
+}) {
+  const cleanedText = normalizeSelectedText(text);
+  const selectedSourceType = sourceType === "book" ? "book" : "trail";
+  const selectedSourceId = String(sourceId || "");
+  const selectedChapterIndex = Number(chapterIndex) || 0;
+
+  if (!selectedSourceId || cleanedText.length < 3) {
+    const error = new Error("Select a phrase before asking for context translation.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (cleanedText.length > 1200) {
+    const error = new Error("Select a shorter passage for contextual translation.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const cached = await get(
+    `
+    SELECT translation, explanation, expressions_json, provider
+    FROM reading_context_translation_cache
+    WHERE source_type = ?
+      AND source_id = ?
+      AND chapter_index = ?
+      AND original_text = ?
+      AND target_language = 'pt-BR'
+    `,
+    [selectedSourceType, selectedSourceId, selectedChapterIndex, cleanedText]
+  );
+
+  if (cached) {
+    return {
+      text: cleanedText,
+      translation: cached.translation,
+      explanation: cached.explanation || "",
+      expressions: parseExpressions(cached.expressions_json),
+      source: "cache",
+      provider: cached.provider || "ollama"
+    };
+  }
+
+  const wantsDetailedTranslation = detailed === true || detailed === "true";
+  const aiResult = await generateAIResponse(
+    wantsDetailedTranslation
+      ? buildContextualReadingTranslationPrompt({
+          text: cleanedText,
+          title,
+          chapterTitle
+        })
+      : buildFastContextualReadingTranslationPrompt({
+          text: cleanedText
+        }),
+    {
+      provider: "ollama",
+      localOnly: true,
+      numPredict: wantsDetailedTranslation ? 420 : getFastTranslationTokenLimit(cleanedText)
+    }
+  );
+  const parsed = wantsDetailedTranslation
+    ? parseContextualTranslation(aiResult)
+    : {
+        translation: cleanPlainTranslation(aiResult),
+        explanation: "",
+        expressions: []
+      };
+
+  await run(
+    `
+    INSERT INTO reading_context_translation_cache (
+      source_type,
+      source_id,
+      chapter_index,
+      original_text,
+      target_language,
+      translation,
+      explanation,
+      expressions_json,
+      provider
+    )
+    VALUES (?, ?, ?, ?, 'pt-BR', ?, ?, ?, 'ollama')
+    ON CONFLICT(source_type, source_id, chapter_index, original_text, target_language)
+    DO UPDATE SET
+      translation = excluded.translation,
+      explanation = excluded.explanation,
+      expressions_json = excluded.expressions_json,
+      provider = excluded.provider,
+      updated_at = CURRENT_TIMESTAMP
+    `,
+    [
+      selectedSourceType,
+      selectedSourceId,
+      selectedChapterIndex,
+      cleanedText,
+      parsed.translation,
+      parsed.explanation,
+      JSON.stringify(parsed.expressions)
+    ]
+  );
+
+  return {
+    text: cleanedText,
+    translation: parsed.translation,
+    explanation: parsed.explanation,
+    expressions: parsed.expressions,
+    source: "ollama",
+    provider: "ollama"
+  };
+}
+
+function normalizeSelectedText(text) {
+  return String(text || "").replace(/\s+/g, " ").trim();
+}
+
+function getFastTranslationTokenLimit(text) {
+  const wordCount = countWords(text);
+  return clamp(Math.round(wordCount * 2.4) + 24, 48, 180);
+}
+
+function cleanPlainTranslation(rawResponse) {
+  return String(rawResponse || "")
+    .replace(/^["“”]+|["“”]+$/g, "")
+    .replace(/^tradu[cç][aã]o:\s*/i, "")
+    .trim();
+}
+
+function parseContextualTranslation(rawResponse) {
+  const fallbackText = String(rawResponse || "").trim();
+  const jsonText = extractJsonObject(fallbackText);
+
+  if (jsonText) {
+    try {
+      const parsed = JSON.parse(jsonText);
+      return {
+        translation: String(parsed.translation || "").trim() || fallbackText,
+        explanation: String(parsed.explanation || "").trim(),
+        expressions: parseExpressions(parsed.expressions)
+      };
+    } catch (error) {
+      // Fall through to the plain-text fallback.
+    }
+  }
+
+  return {
+    translation: fallbackText || "Nao consegui gerar uma traducao contextual agora.",
+    explanation: "",
+    expressions: []
+  };
+}
+
+function extractJsonObject(text) {
+  const cleaned = String(text || "")
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  return cleaned.slice(start, end + 1);
+}
+
+function parseExpressions(value) {
+  if (typeof value === "string") {
+    try {
+      return parseExpressions(JSON.parse(value));
+    } catch (error) {
+      return [];
+    }
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((expression) => ({
+      english: String(expression?.english || "").trim(),
+      portuguese: String(expression?.portuguese || "").trim()
+    }))
+    .filter((expression) => expression.english || expression.portuguese)
+    .slice(0, 4);
+}
+
 async function deleteBook(bookId) {
   const selectedBookId = Number(bookId);
   if (!selectedBookId) {
@@ -719,6 +920,9 @@ async function deleteBook(bookId) {
   }
 
   await run("DELETE FROM reading_progress WHERE source_type = 'book' AND source_id = ?", [
+    String(selectedBookId)
+  ]);
+  await run("DELETE FROM reading_context_translation_cache WHERE source_type = 'book' AND source_id = ?", [
     String(selectedBookId)
   ]);
   await run("DELETE FROM reading_chapters WHERE book_id = ?", [selectedBookId]);
@@ -747,6 +951,7 @@ module.exports = {
   deleteBook,
   extractUploadText,
   getBookReader,
+  getContextualReadingTranslation,
   getLocalTranslation,
   getReadingTranslation,
   getTrailReader,

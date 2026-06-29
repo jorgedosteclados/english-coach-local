@@ -45,6 +45,9 @@ https://doi.org/10.1017/S0272263109990520
 **Product translation:** Checked answers receive immediate correctness feedback,
 the target form, and an explanation. Speaking practice compares the learner's words
 with the target phrase and provides a corrected version.
+Technical Call correction uses corrective feedback on learner-produced call phrases:
+it labels the error type, explains the issue in Portuguese, and contrasts a corrected
+sentence with a more natural professional spoken version.
 Short sound cues reinforce feedback timing, but remain optional and never carry
 correctness information without the corresponding visual correction.
 

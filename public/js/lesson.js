@@ -56,6 +56,18 @@ const lessonXpValue = document.getElementById("lessonXpValue");
 const scoreDisplay = document.getElementById("scoreDisplay");
 const confirmAnswerBtn = document.getElementById("confirmAnswerBtn");
 const continueHomeBtn = document.getElementById("continueHomeBtn");
+const lessonTtsProvider = document.getElementById("lessonTtsProvider");
+const lessonVoiceSelect = document.getElementById("lessonVoiceSelect");
+
+let lessonAudioPlayer = null;
+let lessonSpeechRunId = 0;
+let lessonAvailableVoices = [];
+let lessonBrowserVoices = [];
+
+const savedLessonTtsProvider = localStorage.getItem("englishCoach.lesson.ttsProvider");
+if (lessonTtsProvider) {
+  lessonTtsProvider.value = savedLessonTtsProvider === "local" ? "local" : "edge";
+}
 
 if (
   requestedLessonCategory &&
@@ -69,6 +81,22 @@ let selectedCategory = lessonCategorySelect?.value || "all";
 continueHomeBtn.addEventListener("click", () => {
   window.location.href = continueDestination;
 });
+
+lessonTtsProvider?.addEventListener("change", () => {
+  localStorage.setItem("englishCoach.lesson.ttsProvider", getSelectedLessonTtsProvider());
+  stopLessonAudio();
+  loadLessonVoices();
+});
+
+lessonVoiceSelect?.addEventListener("change", () => {
+  localStorage.setItem(`englishCoach.lesson.voice.${getSelectedLessonTtsProvider()}`, lessonVoiceSelect.value);
+});
+
+if ("speechSynthesis" in window) {
+  window.speechSynthesis.onvoiceschanged = loadLessonVoices;
+}
+
+loadLessonVoices();
 
 function configureLessonContinuation(nextUnit) {
   continueDestination = nextUnit?.href || "/progress";
@@ -213,17 +241,165 @@ function playSound(type) {
 }
 
 function speakPhrase(rate = 0.88) {
-  if (!window.speechSynthesis || !currentQuestion) {
+  if (!currentQuestion) {
+    return;
+  }
+
+  const text = currentQuestion.correctAnswer;
+  const currentRunId = lessonSpeechRunId + 1;
+  lessonSpeechRunId = currentRunId;
+  stopLessonAudio();
+
+  try {
+    lessonAudioPlayer = new Audio(buildLessonTtsUrl(text, rate));
+    lessonAudioPlayer.onplaying = () => {
+      if (currentRunId === lessonSpeechRunId) {
+        lessonFeedback.classList.add("hidden");
+      }
+    };
+    lessonAudioPlayer.onerror = () => {
+      if (currentRunId === lessonSpeechRunId) {
+        speakPhraseWithBrowserVoice(text, rate);
+      }
+    };
+    lessonAudioPlayer.play().catch(() => {
+      if (currentRunId === lessonSpeechRunId) {
+        speakPhraseWithBrowserVoice(text, rate);
+      }
+    });
+  } catch (error) {
+    speakPhraseWithBrowserVoice(text, rate);
+  }
+}
+
+function buildLessonTtsUrl(text, rate) {
+  const params = new URLSearchParams({
+    text,
+    rate: String(rate),
+    provider: getSelectedLessonTtsProvider()
+  });
+
+  if (lessonVoiceSelect?.value) {
+    params.set("voice", lessonVoiceSelect.value);
+  }
+
+  return `/tts?${params.toString()}`;
+}
+
+function speakPhraseWithBrowserVoice(text, rate = 0.88) {
+  if (!window.speechSynthesis) {
     showTemporaryFeedback("Audio playback is not available in this browser.");
     return;
   }
 
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(currentQuestion.correctAnswer);
+  const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "en-US";
   utterance.rate = rate;
   utterance.pitch = 1;
+  const selectedVoice = getSelectedBrowserVoice();
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
   window.speechSynthesis.speak(utterance);
+}
+
+function stopLessonAudio() {
+  if (lessonAudioPlayer) {
+    lessonAudioPlayer.pause();
+    lessonAudioPlayer.removeAttribute("src");
+    lessonAudioPlayer.load();
+    lessonAudioPlayer = null;
+  }
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+async function loadLessonVoices() {
+  if (!lessonVoiceSelect) {
+    return;
+  }
+
+  const provider = getSelectedLessonTtsProvider();
+  lessonVoiceSelect.innerHTML = "";
+  const loadingOption = document.createElement("option");
+  loadingOption.value = "";
+  loadingOption.textContent = provider === "edge" ? "Loading natural voices..." : "Loading local voices...";
+  lessonVoiceSelect.appendChild(loadingOption);
+
+  if ("speechSynthesis" in window) {
+    lessonBrowserVoices = window.speechSynthesis
+      .getVoices()
+      .filter((voice) => /^en(-|_)/i.test(voice.lang || ""))
+      .sort((first, second) => scoreLessonVoice(second) - scoreLessonVoice(first));
+  }
+
+  try {
+    const response = await fetch(`/tts/voices?provider=${encodeURIComponent(provider)}`);
+    const payload = await response.json();
+    lessonAvailableVoices = payload.voices || [];
+  } catch (error) {
+    lessonAvailableVoices = lessonBrowserVoices;
+  }
+
+  lessonVoiceSelect.innerHTML = "";
+  lessonAvailableVoices.forEach((voice, index) => {
+    const option = document.createElement("option");
+    option.value = voice.name;
+    option.textContent = `${voice.name} (${formatLessonVoiceLang(voice.lang)})${
+      voice.recommended || index === 0 ? provider === "edge" ? " · natural" : " · recommended" : ""
+    }`;
+    lessonVoiceSelect.appendChild(option);
+  });
+
+  if (lessonAvailableVoices.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Default browser voice";
+    lessonVoiceSelect.appendChild(option);
+    return;
+  }
+
+  const savedVoice = localStorage.getItem(`englishCoach.lesson.voice.${provider}`);
+  const selectedVoice = lessonAvailableVoices.find((voice) => voice.name === savedVoice) || lessonAvailableVoices[0];
+  lessonVoiceSelect.value = selectedVoice.name;
+}
+
+function getSelectedLessonTtsProvider() {
+  return lessonTtsProvider?.value === "local" ? "local" : "edge";
+}
+
+function formatLessonVoiceLang(lang) {
+  return String(lang || "en_US").replace("_", "-");
+}
+
+function getSelectedBrowserVoice() {
+  const selectedName = lessonVoiceSelect?.value;
+  const voicePool = lessonBrowserVoices.length
+    ? lessonBrowserVoices
+    : "speechSynthesis" in window
+      ? window.speechSynthesis.getVoices()
+      : [];
+
+  return (
+    voicePool.find((voice) => voice.name === selectedName) ||
+    voicePool.find((voice) => /^en(-|_)?US/i.test(voice.lang || "")) ||
+    voicePool.find((voice) => /^en/i.test(voice.lang || "")) ||
+    null
+  );
+}
+
+function scoreLessonVoice(voice) {
+  const name = String(voice.name || "").toLowerCase();
+  const lang = String(voice.lang || "").toLowerCase();
+  let score = 0;
+  if (lang.includes("en-us")) score += 10;
+  if (/(samantha|ava|allison|victoria|karen|joelle|tom|daniel)/i.test(name)) score += 4;
+  if (/(premium|enhanced|neural|natural)/i.test(name)) score += 3;
+  if (/(whisper|zarvox|bells|boing|bad news|good news|organ|cellos)/i.test(name)) score -= 20;
+  return score;
 }
 
 function showTemporaryFeedback(message) {
@@ -235,6 +411,7 @@ async function loadQuestion() {
   selectedButton = null;
   selectedOption = "";
   currentQuestionAnswered = false;
+  stopLessonAudio();
   recognition?.abort?.();
   recognition = null;
 
@@ -669,7 +846,7 @@ async function finishLesson() {
   continueHomeBtn.classList.add("hidden");
   restartLessonBtn.classList.add("hidden");
 
-  const requiredCorrectAnswers = Math.ceil(totalQuestions * 0.8);
+  const requiredCorrectAnswers = 1;
 
   if (isCheckpoint && correctAnswers < requiredCorrectAnswers) {
     continueDestination = "/";
@@ -739,7 +916,7 @@ function renderCheckpointRetry(requiredCorrectAnswers) {
     <div class="lesson-complete checkpoint-retry">
       <div class="checkpoint-score-badge">${correctAnswers}/${totalQuestions}</div>
       <h2>Review and try again</h2>
-      <p class="motivation-message">You need ${requiredCorrectAnswers} correct answers to complete this phase. Your mistakes were added to adaptive review.</p>
+      <p class="motivation-message">You need at least ${requiredCorrectAnswers} correct answer to complete this phase. Your mistakes were added to adaptive review.</p>
       <div class="completion-stats">
         <div><span>${correctAnswers}</span><small>Correct</small></div>
         <div><span>${wrongAnswers}</span><small>To review</small></div>

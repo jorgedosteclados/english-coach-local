@@ -32,7 +32,13 @@ For offline reading translations without AI tokens, run a local LibreTranslate
 server and keep this URL in `.env`:
 
 ```env
-LIBRETRANSLATE_URL=http://127.0.0.1:5000
+LIBRETRANSLATE_URL=http://127.0.0.1:5799
+```
+
+Start the local translation server on that port with:
+
+```bash
+/Users/I560982/Library/Python/3.9/bin/libretranslate --host 127.0.0.1 --port 5799
 ```
 
 Reading word images use Openverse by default and are cached locally:

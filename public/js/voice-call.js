@@ -348,7 +348,7 @@ async function finishCall() {
         <div class="success-badge">✓</div>
         <h2>Call complete</h2>
         <p class="motivation-message">You practiced a realistic support call with a local AI customer.</p>
-        ${renderStructuredFeedback(data.result)}
+        ${typeof renderCallFeedback === "function" ? renderCallFeedback(data.result) : renderStructuredFeedback(data.result)}
         <button type="button" class="secondary-btn" id="restartCallBtn">Start Again</button>
       </div>
     `;

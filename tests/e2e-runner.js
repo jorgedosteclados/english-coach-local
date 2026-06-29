@@ -145,9 +145,44 @@ async function main() {
     await run(results, "interactive reading opens trail text and imports a book", async () => {
       const page = await newPage(browser);
 
+      await page.route("**/reading/context-translation", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.equal(body.sourceType, "trail");
+        assert.equal(String(body.text || "").length > 10, true);
+
+        await route.fulfill({
+          json: {
+            text: body.text,
+            translation: "O cliente relata um problema que precisa de mais detalhes.",
+            explanation: "A frase descreve o contexto inicial de um atendimento.",
+            expressions: [
+              {
+                english: "more details",
+                portuguese: "mais detalhes"
+              }
+            ],
+            source: "ollama"
+          }
+        });
+      });
+
       await page.goto(`${baseURL}/reading?unit=25`);
       await expectVisibleText(page, "A Clear First Reply");
       await expectVisibleText(page, "Unit 2 Reading");
+      assert.equal(await page.getByRole("button", { name: "Dark" }).getAttribute("aria-pressed"), "false");
+      await page.getByRole("button", { name: "Dark" }).click();
+      assert.match(await page.locator("body").getAttribute("class"), /reading-dark/);
+      assert.equal(
+        await page.evaluate(() => localStorage.getItem("englishCoach.reading.darkMode")),
+        "1"
+      );
+      assert.equal(await page.getByRole("button", { name: "Light" }).getAttribute("aria-pressed"), "true");
+      await page.getByRole("button", { name: "AI translate" }).click();
+      await expectVisibleText(page, "Context translation");
+      await expectVisibleText(page, "O cliente relata um problema");
+      await expectVisibleText(page, "more details");
+      await page.getByRole("button", { name: "Close contextual translation" }).click();
       const localPronounResponse = await page.request.get(`${baseURL}/reading/translate?word=his`);
       assert.equal(localPronounResponse.status(), 200);
       assert.deepEqual(await localPronounResponse.json(), {
@@ -296,6 +331,7 @@ async function main() {
       await expectVisibleText(page, "Support Stories");
       await expectVisibleText(page, "Chapter 1");
       await expectVisibleText(page, "1/2");
+      assert.match(await page.locator("body").getAttribute("class"), /reading-dark/);
       await page.getByRole("button", { name: "customer", exact: true }).first().click();
       await expectVisibleText(page, "cliente");
 
@@ -419,6 +455,41 @@ async function main() {
       const requestedCategories = [];
       const correctOptionPositions = [];
 
+      await page.addInitScript(() => {
+        window.__lessonAudioEvents = [];
+
+        class FakeAudio {
+          constructor(src) {
+            this.src = src;
+            window.__lessonAudioEvents.push({ event: "construct", src });
+            this.onplaying = null;
+            this.onerror = null;
+          }
+
+          play() {
+            window.__lessonAudioEvents.push({ event: "play", src: this.src });
+            if (this.onplaying) {
+              this.onplaying();
+            }
+            return Promise.resolve();
+          }
+
+          pause() {}
+          removeAttribute() {}
+          load() {}
+        }
+
+        Object.defineProperty(window, "Audio", { value: FakeAudio, configurable: true });
+      });
+
+      await page.route("**/tts/voices?**", async (route) => {
+        await route.fulfill({
+          json: {
+            voices: [{ name: "en-US-JennyNeural", lang: "en-US", recommended: true }]
+          }
+        });
+      });
+
       await page.route("**/ai/generate-lesson-question", async (route) => {
         const body = route.request().postDataJSON();
         const category = body.category || "all";
@@ -493,9 +564,11 @@ async function main() {
         } else if (questionIndex === 1) {
           await expectVisibleText(page, "Listen and build the phrase");
           await page.getByRole("button", { name: "Play phrase", exact: true }).waitFor();
+          await page.getByRole("button", { name: "Play phrase", exact: true }).click();
         } else if (questionIndex === 2) {
           await expectVisibleText(page, "Listen and type what you hear");
           await page.getByRole("button", { name: "Play phrase slowly" }).waitFor();
+          await page.getByRole("button", { name: "Play phrase slowly" }).click();
         } else {
           await expectVisibleText(page, "Speak this phrase");
           await expectVisibleText(page, question.correctAnswer);
@@ -537,6 +610,13 @@ async function main() {
       const soundEvents = await page.evaluate(() => window.testSoundEvents);
       assert.equal(soundEvents.filter((event) => event === "correct").length, 5);
       assert.ok(soundEvents.includes("complete"));
+      assert.ok(
+        await page.evaluate(() =>
+          window.__lessonAudioEvents.some(
+            (event) => event.event === "play" && event.src.includes("/tts?") && event.src.includes("provider=edge")
+          )
+        )
+      );
       await page.getByRole("button", { name: "Continue to next lesson" }).click();
       await page.waitForURL("**/lesson?unit=7&category=troubleshooting");
       assert.ok(requestedCategories.includes("request-info"));
@@ -601,7 +681,7 @@ async function main() {
       await page.close();
     });
 
-    await run(results, "phase checkpoint requires 80 percent mastery", async () => {
+    await run(results, "phase checkpoint requires one correct answer", async () => {
       await seedUnitProgress([1, 2, 3, 4, 5]);
       const page = await newPage(browser);
       let questionIndex = 0;
@@ -637,15 +717,34 @@ async function main() {
       await page.goto(checkpointUrl);
       await expectVisibleText(page, "Foundation Checkpoint");
       await page.evaluate(() => {
-        correctAnswers = 6;
-        wrongAnswers = 2;
-        xpEarned = 60;
+        correctAnswers = 0;
+        wrongAnswers = 8;
+        xpEarned = 0;
         finishLesson();
       });
       await expectVisibleText(page, "Review and try again");
-      await expectVisibleText(page, "You need 7 correct answers");
+      await expectVisibleText(page, "You need at least 1 correct answer");
       assert.equal(savedCheckpoints.length, 0);
 
+      questionIndex = 0;
+      await page.goto(checkpointUrl);
+      await page.evaluate(() => {
+        correctAnswers = 1;
+        wrongAnswers = 7;
+        xpEarned = 10;
+        finishLesson();
+      });
+      await expectVisibleText(page, "Checkpoint complete!");
+      await expectVisibleText(page, "The next phase is now unlocked.");
+      assert.equal(savedCheckpoints.length, 1);
+      assert.deepEqual(savedCheckpoints[0], {
+        xpEarned: 10,
+        correctAnswers: 1,
+        wrongAnswers: 7,
+        unitId: 21
+      });
+
+      savedCheckpoints.length = 0;
       questionIndex = 0;
       await page.goto(checkpointUrl);
       const checkpointExerciseTypes = [
@@ -808,6 +907,83 @@ async function main() {
       await page.close();
     });
 
+    await run(results, "technical call correction classifies real call phrases", async () => {
+      const page = await newPage(browser);
+
+      await page.route("**/ai/correct", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.equal(body.mode, "call");
+        assert.equal(body.text.includes("how much you do expecting"), true);
+
+        await route.fulfill({
+          json: {
+            mode: "call",
+            result: [
+              "Original:",
+              "And how much you do expecting to be calculated for the first day?",
+              "",
+              "Error type:",
+              "Question structure",
+              "",
+              "Explanation in Portuguese:",
+              "A ideia esta clara, mas em pergunta no passado/expectativa usamos 'were you expecting', nao 'do expecting'.",
+              "",
+              "Corrected:",
+              "How much were you expecting to be calculated for the first day?",
+              "",
+              "More natural:",
+              "What amount were you expecting for the first day?",
+              "",
+              "Professional version:",
+              "Could you confirm the amount you expected for the first day?",
+              "",
+              "Reusable pattern:",
+              "What were you expecting for...?",
+              "",
+              "Useful alternatives:",
+              "- What should the system calculate for the first day?",
+              "- Could you confirm the expected amount?",
+              "- What result were you expecting to see?"
+            ].join("\n")
+          }
+        });
+      });
+
+      await page.route("**/ai/save-lesson-progress", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.equal(body.unitId, 14);
+        assert.equal(body.correctAnswers, 1);
+
+        await route.fulfill({
+          json: {
+            success: true,
+            streakDays: 6,
+            unitProgress: { unitId: 14, status: "completed" },
+            nextUnit: { id: 15, title: "Integration Conversation", href: "/conversation?unit=15" }
+          }
+        });
+      });
+
+      await page.goto(`${baseURL}/correct?unit=14&mode=call`);
+      await pause();
+      await expectVisibleText(page, "Real Call Phrases");
+      await page
+        .getByLabel("Call phrase or transcript lines")
+        .fill("And how much you do expecting to be calculated for the first day?");
+      await page.getByRole("button", { name: "Analyze Call Phrase" }).click();
+      await expectVisibleText(page, "Call feedback complete!");
+      await expectVisibleText(page, "Question structure");
+      await expectVisibleText(page, "What were you expecting for...?");
+      assert.equal(
+        await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
+        "/conversation?unit=15"
+      );
+      await pause();
+      await page.close();
+    });
+
     await run(results, "conversation completes with customer replies and feedback", async () => {
       const page = await newPage(browser);
       const customerReplies = [
@@ -896,6 +1072,40 @@ async function main() {
         await page.getByRole("link", { name: "Continue to next lesson" }).getAttribute("href"),
         "/lesson?unit=16&category=tone"
       );
+      await pause();
+      await page.close();
+    });
+
+    await run(results, "local AI chat streams messages to Ollama route", async () => {
+      const page = await newPage(browser);
+
+      await page.route("**/ai/local-chat-stream", async (route) => {
+        const body = route.request().postDataJSON();
+
+        assert.equal(body.think, true);
+        assert.deepEqual(body.messages.at(-1), {
+          role: "user",
+          content: "Help me practice a support call."
+        });
+
+        await route.fulfill({
+          contentType: "text/event-stream",
+          body:
+            'event: token\ndata: {"token":"Sure. I will be the customer. "}\n\n' +
+            'event: token\ndata: {"token":"What is your first question?"}\n\n' +
+            "event: done\ndata: {}\n\n"
+        });
+      });
+
+      await page.goto(`${baseURL}/local-ai`);
+      await pause();
+      await expectVisibleText(page, "Local AI Chat");
+      assert.equal(await page.getByLabel("Deep thinking").isChecked(), false);
+      await page.getByLabel("Deep thinking").check();
+      await page.getByLabel("Message").fill("Help me practice a support call.");
+      await page.getByRole("button", { name: "Send" }).click();
+      await expectVisibleText(page, "Help me practice a support call.");
+      await expectVisibleText(page, "What is your first question?");
       await pause();
       await page.close();
     });

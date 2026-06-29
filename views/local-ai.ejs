@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local AI Chat</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="container local-ai-page">
+    <a href="/" class="back-link">Back to Home</a>
+
+    <section class="hero hero-with-mascot compact-mascot">
+      <div>
+        <p class="mascot-kicker">Ollama Local</p>
+        <h1>Local AI Chat</h1>
+        <p>Talk with your local model for English, calls, and technical support practice.</p>
+      </div>
+      <img
+        src="/images/mini-beagle-mascot.png"
+        alt="Mini beagle mascot"
+        class="mascot-img"
+      />
+    </section>
+
+    <section class="local-ai-chat" aria-label="Local AI chat">
+      <div id="localAiThread" class="local-ai-thread"></div>
+
+      <div class="local-ai-prompts" aria-label="Quick prompts">
+        <button type="button" data-prompt="Practice a technical support call with me. Ask one customer question at a time.">Practice call</button>
+        <button type="button" data-prompt="Correct this English sentence and explain in Portuguese: ">Correct phrase</button>
+        <button type="button" data-prompt="Give me natural English phrases to explain that I need to investigate after the call.">Next steps</button>
+      </div>
+
+      <form id="localAiForm" class="local-ai-form">
+        <label for="localAiInput">Message</label>
+        <textarea
+          id="localAiInput"
+          placeholder="Ask your local AI something..."
+          rows="3"
+        ></textarea>
+        <div class="local-ai-actions">
+          <label class="local-ai-thinking-toggle" for="localAiThinking">
+            <input type="checkbox" id="localAiThinking" />
+            <span>Deep thinking</span>
+          </label>
+          <button type="button" id="clearLocalAiBtn" class="secondary-btn">Clear</button>
+          <button type="submit" id="sendLocalAiBtn">Send</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/soundManager.js"></script>
+  <script src="/js/local-ai.js"></script>
+</body>
+</html>

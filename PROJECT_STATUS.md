@@ -1,6 +1,6 @@
 # English Coach Local - Project Status
 
-Last updated: 2026-06-27
+Last updated: 2026-06-28
 
 This file is the persistent project record. Update it whenever a relevant feature,
 technical decision, data change, test, or roadmap item changes.
@@ -46,8 +46,9 @@ The research-to-feature mapping and starting bibliography are maintained in
 - SQLite local database (`english_coach.db`)
 - Vanilla JavaScript and CSS
 - Gemini, Groq, and optional OpenRouter AI providers
+- Local Ollama chat for direct in-app conversation with the user's local model
 - Optional local LibreTranslate service for reading lookups without AI tokens
-- Optional Edge TTS command-line provider for more natural experimental reading audio
+- Optional Edge TTS command-line provider for more natural experimental reading and lesson audio
 - Playwright end-to-end tests
 
 ## Implemented Features
@@ -57,7 +58,11 @@ The research-to-feature mapping and starting bibliography are maintained in
 - CSV question import
 - Writing missions with AI feedback
 - English correction with structured feedback
+- Technical call phrase correction for real call sentences, with error type,
+  Portuguese explanation, corrected version, natural call version, professional
+  version, and reusable pattern
 - Simulated customer conversations
+- In-app local AI chat through Ollama for English, support calls, and technical phrase help
 - Speaking practice with browser speech recognition
 - Visual, listening, and speaking daily review
 - Adaptive mistake review with spaced scheduling
@@ -65,7 +70,7 @@ The research-to-feature mapping and starting bibliography are maintained in
 - Interactive reading mode in the learning path with sentence playback and word lookup
 - Imported book library with PDF/TXT support and free reading mode
 - Immersive reading display with a calmer long-reading layout and saved preference
-- Natural online reading voice option through Edge TTS with cached MP3 generation
+- Natural online reading and lesson voice option through Edge TTS with cached MP3 generation
 - Reading vocabulary, personal dictionary, local dictionary, and translation cache
 - Optional visual word lookup with Openverse images cached locally
 - Local progress, XP, streak, achievements, and history
@@ -132,7 +137,7 @@ activities and one checkpoint after each group of five activities.
 2. **Ticket Mastery**: case updates, troubleshooting, follow-up writing,
    difficult conversations, and call confidence.
 3. **Technical Problem Solving**: systems and integrations, business impact,
-   technical scope, technical correction, and integration conversation.
+   technical scope, technical call correction, and integration conversation.
 4. **Confident Communicator**: professional tone, email, ticket closure,
    fluent support calls, and a final customer simulation.
 
@@ -147,10 +152,11 @@ Unlocking is enforced in both places:
   unit is complete.
 
 Each phase checkpoint contains eight mixed exercises drawn from three categories in
-that phase. A learner needs at least 7/8 correct answers (80%) to complete the
-checkpoint and unlock the next phase. Failed checkpoint answers still enter adaptive
-review, but the checkpoint node is not marked complete. Existing users who had
-already reached later phases receive the required earlier checkpoints automatically.
+that phase. A learner needs at least one correct answer to complete the checkpoint
+and unlock the next phase. Failed checkpoint answers still enter adaptive review, but
+the checkpoint node is not marked complete when the learner gets zero correct
+answers. Existing users who had already reached later phases receive the required
+earlier checkpoints automatically.
 
 ## Lesson Experience
 
@@ -239,6 +245,23 @@ speaking, adaptive review, daily review, and history.
 
 ## Change Log
 
+### 2026-06-28
+
+- Added a Technical Call correction mode to `/correct`, used by Unit 14 and quick
+  practice, for real call phrases and transcript lines.
+- Technical Call feedback now classifies error type, explains the issue in
+  Portuguese, and provides corrected, natural, professional, and reusable pattern
+  versions.
+- Voice-call completion feedback now uses the same call-phrase diagnostic structure.
+- Lesson listening and speaking exercises now use the shared cached TTS route with
+  Natural Online and Local Mac voice choices, falling back to browser speech if needed.
+- Added `/local-ai` for direct browser chat with the local Ollama model, keeping the
+  route local-only and preserving short chat history in the browser.
+- Local AI chat now streams responses in real time and includes a selectable Deep
+  thinking toggle that stays off by default.
+- Changed checkpoint completion from an 80% mastery gate to a minimum of one correct
+  answer, while zero-correct attempts still retry and send mistakes to review.
+
 ### 2026-06-23
 
 - Added `/question-bank` to monitor total, unused, used, AI-generated, due-review,
@@ -259,6 +282,14 @@ speaking, adaptive review, daily review, and history.
   Edge audio is cached as MP3 so repeated playback does not call the online service.
 - Added a separate library/free-reading mode for importing whole books from TXT/PDF
   files, splitting large books into readable parts, and preserving reading progress.
+- Added a saved dark Kindle-style reading mode for the book/trail reader, so long
+  sessions can use a low-glare page without leaving immersive mode.
+- Added local-AI contextual passage translation to the reader. The existing word
+  translator stays unchanged; selected text or the active sentence can now be
+  translated with Ollama and cached separately.
+- Optimized contextual reader translation to use a fast translation-only Ollama
+  prompt by default, reducing token usage and avoiding slow JSON explanations during
+  normal reading.
 - Added reading vocabulary saving with sentence context and a personal dictionary for
   learner-supplied translations.
 - Added local word translations for common support and reading vocabulary, including
@@ -272,7 +303,7 @@ speaking, adaptive review, daily review, and history.
   search results appear as selectable candidates through `Find image`, then the chosen
   image is stored as approved for future lookups.
 - Documented `LIBRETRANSLATE_URL` in `.env.example` and README. The local machine
-  currently uses `http://127.0.0.1:5001` because port `5000` is occupied by macOS.
+  uses `http://127.0.0.1:5799` to avoid common local service ports.
 - Expanded E2E coverage for local dictionary lookup, user dictionary lookup, optional
   LibreTranslate lookup, Openverse image lookup, abstract-word image skipping, and
   cache reuse.
@@ -325,7 +356,7 @@ speaking, adaptive review, daily review, and history.
   match, missing, different, and extra-word states.
 - Collapsed detailed AI speaking feedback behind an optional disclosure.
 - Expanded the path from 20 activities to 24 nodes with four phase checkpoints.
-- Added eight-question mixed checkpoint sessions with a minimum 80% mastery rule.
+- Added eight-question mixed checkpoint sessions with a mastery gate.
 - Added retry and adaptive-review guidance when a checkpoint is not passed.
 - Added progress migration for users who reached later phases before checkpoints existed.
 - Expanded the main E2E suite to 10 flows with checkpoint pass/fail coverage.

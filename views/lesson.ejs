@@ -30,6 +30,21 @@
           <% }) %>
         </select>
       </label>
+      <div class="lesson-voice-controls" aria-label="Lesson audio voice">
+        <label for="lessonTtsProvider">
+          <span>Audio</span>
+          <select id="lessonTtsProvider">
+            <option value="edge">Natural Online</option>
+            <option value="local">Local Mac</option>
+          </select>
+        </label>
+        <label for="lessonVoiceSelect">
+          <span>Voice</span>
+          <select id="lessonVoiceSelect" aria-label="Lesson voice">
+            <option value="">Loading voices...</option>
+          </select>
+        </label>
+      </div>
     </section>
 
     <section class="lesson-exercise">
